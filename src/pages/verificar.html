@@ -27,6 +27,7 @@
 
   <script type="module">
     import { verificarEmail } from '../lib/supabase.js'
+    import { routes } from '../lib/routes.js'
 
     const params = new URLSearchParams(window.location.search)
     const id = params.get('id')
@@ -36,7 +37,7 @@
       try {
         if (!id) throw new Error('Falta el parámetro "id".')
         await verificarEmail(id)
-        window.location.href = '/src/pages/login.html'
+        window.location.href = routes.login
       } catch (e) {
         console.error(e)
         errEl.style.display = 'block'

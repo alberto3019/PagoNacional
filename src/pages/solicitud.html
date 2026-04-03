@@ -217,6 +217,7 @@
   import { crearSolicitud, subirImagenCloudinary, obtenerCamioneroPorEmail, actualizarDniFotosCamionero } from '../lib/supabase.js'
   import { enviarConfirmacionSolicitud, enviarNotificacionAdmin } from '../lib/emails.js'
   import { datosPrestamistaParaTerminos, ensurePrestamistaLoaded } from '../lib/terminosEmpresa.js'
+  import { routes } from '../lib/routes.js'
 
   const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL
 
@@ -239,7 +240,7 @@
     const camionero_id = sessionStorage.getItem('camionero_id')
     const email = sessionStorage.getItem('camionero_email')
     if (!camionero_id || !email) {
-      window.location.href = '/src/pages/login.html'
+      window.location.href = routes.login
       return
     }
     try {
@@ -265,13 +266,13 @@
     const monto = document.getElementById('monto').value.trim()
     if (monto) sessionStorage.setItem('ultimo_monto_solicitud', monto)
     const query = new URLSearchParams({ monto: monto || sessionStorage.getItem('ultimo_monto_solicitud') || '' })
-    window.open(`/src/pages/terminos.html?${query.toString()}`, '_blank')
+    window.open(`${routes.terminos}?${query.toString()}`, '_blank')
   }
 
-  window.goHome = () => { window.location.href = '/src/pages/home.html' }
+  window.goHome = () => { window.location.href = routes.home }
   window.goBack = () => {
     if (history.length > 1) history.back()
-    else window.location.href = '/src/pages/home.html'
+    else window.location.href = routes.home
   }
 
   window.previewFile = function(input, lado) {
@@ -335,7 +336,7 @@
 
     const camionero_id = sessionStorage.getItem('camionero_id')
     if (!camionero_id) {
-      window.location.href = '/src/pages/login.html'
+      window.location.href = routes.login
       return
     }
 
@@ -432,7 +433,7 @@
         console.warn('No se pudo actualizar las fotos de DNI en el perfil:', e)
       }
 
-      window.location.href = `/src/pages/confirmacion.html?num=${solicitud.numero}`
+      window.location.href = `${routes.confirmacion}?num=${encodeURIComponent(solicitud.numero)}`
     } catch (err) {
       console.error(err)
       alertEl.className = 'alert error'

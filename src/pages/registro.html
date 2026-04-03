@@ -325,13 +325,14 @@
   </button>
 
   <div class="login-link">
-    Ya tenes cuenta? <a href="/src/pages/login.html">Ingresar</a>
+    Ya tenes cuenta? <a href="/login">Ingresar</a>
   </div>
 </div>
 
 <script type="module">
   import { registrarCamionero } from '../lib/supabase.js'
   import { enviarVerificacionEmail } from '../lib/emails.js'
+  import { routes } from '../lib/routes.js'
 
   // No permitir avanzar si no acepta T&C
   const tcEl = document.getElementById('tc')
@@ -387,10 +388,10 @@
       sessionStorage.setItem('camionero_nombre', nombre)
 
       // Generar link de verificacion (en prod usar token real)
-      const linkVerificacion = `${window.location.origin}/src/pages/verificar.html?id=${camionero.id}`
+      const linkVerificacion = `${window.location.origin}${routes.verificar}?id=${encodeURIComponent(camionero.id)}`
       await enviarVerificacionEmail(email, nombre, linkVerificacion)
 
-      window.location.href = `/src/pages/verificar-pendiente.html?id=${camionero.id}`
+      window.location.href = `${routes.verificarPendiente}?id=${encodeURIComponent(camionero.id)}`
     } catch (err) {
       console.error(err)
       alert.className = 'alert error'
@@ -410,7 +411,7 @@
       apellido: document.getElementById('apellido').value.trim(),
       dni: document.getElementById('dni').value.trim()
     })
-    window.open(`/src/pages/terminos.html?${params.toString()}`, '_blank')
+    window.open(`${routes.terminos}?${params.toString()}`, '_blank')
   }
 </script>
 

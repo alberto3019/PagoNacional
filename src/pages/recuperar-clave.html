@@ -92,13 +92,14 @@
     </div>
 
     <div class="link">
-      <a href="/src/pages/login.html">Volver al inicio de sesión</a>
+      <a href="/login">Volver al inicio de sesión</a>
     </div>
   </div>
 
   <script type="module">
     import { solicitarResetPassword } from '../lib/supabase.js'
     import { enviarResetPasswordEmail } from '../lib/emails.js'
+    import { routes } from '../lib/routes.js'
 
     const MSG_OK =
       'Si ese email está asociado a una cuenta verificada, te enviamos las instrucciones. Revisá la casilla (y la carpeta de spam).'
@@ -123,8 +124,8 @@
       try {
         const r = await solicitarResetPassword(email)
         if (r.sent) {
-          const base = import.meta.env.VITE_APP_URL || window.location.origin
-          const link = `${base}/src/pages/restablecer-clave.html?t=${encodeURIComponent(r.token)}`
+          const base = String(import.meta.env.VITE_APP_URL || window.location.origin).replace(/\/$/, '')
+          const link = `${base}${routes.restablecerClave}?t=${encodeURIComponent(r.token)}`
           await enviarResetPasswordEmail(r.email, r.nombre, link)
         }
         alertEl.className = 'alert success'

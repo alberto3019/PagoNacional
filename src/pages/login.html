@@ -92,13 +92,14 @@
     <button class="btn-primary" id="btn" onclick="login()">Ingresar</button>
 
     <div class="link-stack">
-      <span><a href="/src/pages/recuperar-clave.html">Olvidé mi contraseña</a></span>
-      <span class="link" style="margin-top:0">No tenés cuenta? <a href="/src/pages/registro.html">Crear cuenta</a></span>
+      <span><a href="/recuperar-clave">Olvidé mi contraseña</a></span>
+      <span class="link" style="margin-top:0">No tenés cuenta? <a href="/registro">Crear cuenta</a></span>
     </div>
   </div>
 
   <script type="module">
     import { obtenerCamioneroPorEmail } from '../lib/supabase.js'
+    import { routes } from '../lib/routes.js'
 
     window.login = async function() {
       const email = document.getElementById('email').value.trim()
@@ -127,7 +128,7 @@
           sessionStorage.removeItem('camionero_id')
           sessionStorage.removeItem('camionero_email')
           sessionStorage.removeItem('camionero_nombre')
-          window.location.href = '/src/pages/admin.html'
+          window.location.href = routes.admin
           return
         }
 
@@ -154,7 +155,7 @@
         sessionStorage.setItem('camionero_nombre', c.nombre || '')
         sessionStorage.removeItem('admin_auth')
 
-        window.location.href = '/src/pages/home.html'
+        window.location.href = routes.home
       } catch (e) {
         console.error(e)
         alertEl.className = 'alert error'

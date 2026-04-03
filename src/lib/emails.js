@@ -1,5 +1,6 @@
 // src/lib/emails.js
 // Servicio de emails usando Resend API
+import { adminPanelAbsoluteUrl } from './routes.js'
 // En produccion esto deberia correr desde un edge function de Supabase
 // para no exponer la API key en el frontend.
 
@@ -157,7 +158,7 @@ export async function enviarNotificacionAdmin(adminEmail, solicitud, camionero) 
             <tr><td style="color: #888; padding: 6px 0;">CBU/CVU</td><td style="text-align:right; font-weight:600; font-size:12px;">${solicitud.cbu_cvu}</td></tr>
           </table>
         </div>
-        <a href="${import.meta.env.VITE_APP_URL}/src/pages/admin.html"
+        <a href="${adminPanelAbsoluteUrl()}"
            style="display: inline-block; background: #1a1a2e; color: #fff; padding: 13px 26px;
                   text-decoration: none; font-size: 14px; font-weight: 500; border-radius: 6px;">
           Ver en el panel admin

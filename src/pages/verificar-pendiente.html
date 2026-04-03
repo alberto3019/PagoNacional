@@ -33,8 +33,8 @@
       <a id="verify-link" href="#">Verificar cuenta</a>
     </p>
     <div class="links">
-      <a href="/src/pages/registro.html">Volver al registro</a>
-      <a href="/src/pages/login.html">Ya verifiqué, ingresar</a>
+      <a href="/registro">Volver al registro</a>
+      <a href="/login">Ya verifiqué, ingresar</a>
     </div>
   </div>
 
@@ -47,7 +47,7 @@
     if (sinEmailApi && id) {
       const note = document.getElementById('dev-verify-note')
       const link = document.getElementById('verify-link')
-      link.href = `/src/pages/verificar.html?id=${encodeURIComponent(id)}`
+      link.href = `/verificar?id=${encodeURIComponent(id)}`
       note.style.display = 'block'
     }
   </script>

@@ -1,0 +1,32 @@
+{
+  "redirects": [
+    { "source": "/src/pages/login.html", "destination": "/login", "permanent": true },
+    { "source": "/src/pages/registro.html", "destination": "/registro", "permanent": true },
+    { "source": "/src/pages/home.html", "destination": "/home", "permanent": true },
+    { "source": "/src/pages/admin.html", "destination": "/admin", "permanent": true },
+    { "source": "/src/pages/solicitud.html", "destination": "/solicitud", "permanent": true },
+    { "source": "/src/pages/perfil.html", "destination": "/perfil", "permanent": true },
+    { "source": "/src/pages/terminos.html", "destination": "/terminos", "permanent": true },
+    { "source": "/src/pages/verificar.html", "destination": "/verificar", "permanent": true },
+    { "source": "/src/pages/verificar-pendiente.html", "destination": "/verificar-pendiente", "permanent": true },
+    { "source": "/src/pages/recuperar-clave.html", "destination": "/recuperar-clave", "permanent": true },
+    { "source": "/src/pages/restablecer-clave.html", "destination": "/restablecer-clave", "permanent": true },
+    { "source": "/src/pages/cuenta.html", "destination": "/cuenta", "permanent": true },
+    { "source": "/src/pages/confirmacion.html", "destination": "/confirmacion", "permanent": true }
+  ],
+  "rewrites": [
+    { "source": "/login", "destination": "/src/pages/login.html" },
+    { "source": "/registro", "destination": "/src/pages/registro.html" },
+    { "source": "/home", "destination": "/src/pages/home.html" },
+    { "source": "/admin", "destination": "/src/pages/admin.html" },
+    { "source": "/solicitud", "destination": "/src/pages/solicitud.html" },
+    { "source": "/perfil", "destination": "/src/pages/perfil.html" },
+    { "source": "/terminos", "destination": "/src/pages/terminos.html" },
+    { "source": "/verificar", "destination": "/src/pages/verificar.html" },
+    { "source": "/verificar-pendiente", "destination": "/src/pages/verificar-pendiente.html" },
+    { "source": "/recuperar-clave", "destination": "/src/pages/recuperar-clave.html" },
+    { "source": "/restablecer-clave", "destination": "/src/pages/restablecer-clave.html" },
+    { "source": "/cuenta", "destination": "/src/pages/cuenta.html" },
+    { "source": "/confirmacion", "destination": "/src/pages/confirmacion.html" }
+  ]
+}

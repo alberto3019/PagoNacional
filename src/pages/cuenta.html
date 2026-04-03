@@ -122,6 +122,7 @@
 
   <script type="module">
     import { obtenerCamioneroPorEmail, obtenerSolicitudesDeCamionero } from '../lib/supabase.js'
+    import { routes } from '../lib/routes.js'
 
     const alertEl = document.getElementById('alert')
 
@@ -140,18 +141,18 @@
       sessionStorage.removeItem('camionero_id')
       sessionStorage.removeItem('camionero_email')
       sessionStorage.removeItem('camionero_nombre')
-      window.location.href = '/src/pages/login.html'
+      window.location.href = routes.login
     }
 
     window.nuevaSolicitud = function() {
-      window.location.href = '/src/pages/solicitud.html'
+      window.location.href = routes.solicitud
     }
 
     async function loadPage() {
       const email = sessionStorage.getItem('camionero_email')
       const camioneroId = sessionStorage.getItem('camionero_id')
       if (!email || !camioneroId) {
-        window.location.href = '/src/pages/login.html'
+        window.location.href = routes.login
         return
       }
 

@@ -647,6 +647,7 @@
     guardarTerminosEmpresa,
     ensurePrestamistaLoaded,
   } from '../lib/terminosEmpresa.js'
+  import { routes } from '../lib/routes.js'
 
   const ADMIN_USER = import.meta.env.VITE_ADMIN_USER || 'admin'
   const ADMIN_PASS = import.meta.env.VITE_ADMIN_PASS || '123456'
@@ -659,10 +660,10 @@
   let camSolicitudesCache = []
 
   // ── AUTH ──────────────────────────────────────────────────────
-  // El admin entra por el login general (/src/pages/login.html).
+  // El admin entra por el login general (/login).
   // Si no hay sesión admin, redirigimos a ese login.
   if (sessionStorage.getItem('admin_auth') !== '1') {
-    window.location.href = '/src/pages/login.html'
+    window.location.href = routes.login
   }
 
   window.doLogin = function() {
@@ -680,7 +681,7 @@
 
   window.doLogout = function() {
     sessionStorage.removeItem('admin_auth')
-    window.location.href = '/src/pages/login.html'
+    window.location.href = routes.login
   }
 
   if (sessionStorage.getItem('admin_auth') === '1') {

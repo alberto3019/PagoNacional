@@ -380,6 +380,7 @@
 
   <script type="module">
     import { obtenerCamioneroPorEmail, obtenerSolicitudesDeCamionero } from '../lib/supabase.js'
+    import { routes } from '../lib/routes.js'
 
     const alertEl = document.getElementById('alert')
     const cardEl = document.getElementById('card')
@@ -434,14 +435,14 @@
       if (document.getElementById('cuenta-overlay')?.classList.contains('open')) cerrarModalCuenta()
     })
 
-    window.goNuevaSolicitud = () => { window.location.href = '/src/pages/solicitud.html' }
-    window.goPerfil = () => { window.location.href = '/src/pages/perfil.html' }
-    window.goHome = () => { window.location.href = '/src/pages/home.html' }
+    window.goNuevaSolicitud = () => { window.location.href = routes.solicitud }
+    window.goPerfil = () => { window.location.href = routes.perfil }
+    window.goHome = () => { window.location.href = routes.home }
     window.logout = () => {
       sessionStorage.removeItem('camionero_id')
       sessionStorage.removeItem('camionero_email')
       sessionStorage.removeItem('camionero_nombre')
-      window.location.href = '/src/pages/login.html'
+      window.location.href = routes.login
     }
 
     function cardHtml(s) {
@@ -477,7 +478,7 @@
       const email = sessionStorage.getItem('camionero_email')
       const camioneroId = sessionStorage.getItem('camionero_id')
       if (!email || !camioneroId) {
-        window.location.href = '/src/pages/login.html'
+        window.location.href = routes.login
         return
       }
 
