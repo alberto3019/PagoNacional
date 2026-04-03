@@ -1,10 +1,23 @@
 // Layout HTML compartido para emails transaccionales (logo centrado + contenido debajo).
-import { emailBaseUrl } from './routes.js'
+// No importar routes.js: este módulo se usa también en /api/email (Node).
 
-/** URL absoluta del logo para clientes de correo (requieren URL pública). */
-export function absoluteLogoUrl() {
-  const b = emailBaseUrl()
-  if (b) return `${b}/logo-pago-nacional.png`
+/** URL absoluta del logo. `baseUrl` = origen público del sitio (ej. https://www.pagonacional.com). */
+export function absoluteLogoUrl(baseUrl) {
+  const explicit = String(baseUrl || '').replace(/\/$/, '')
+  if (explicit) return `${explicit}/logo-pago-nacional.png`
+  const vite =
+    typeof import.meta !== 'undefined' && import.meta.env?.VITE_APP_URL
+      ? String(import.meta.env.VITE_APP_URL).replace(/\/$/, '')
+      : ''
+  if (vite) return `${vite}/logo-pago-nacional.png`
+  if (typeof process !== 'undefined' && process.env?.VITE_APP_URL) {
+    const b = String(process.env.VITE_APP_URL).replace(/\/$/, '')
+    if (b) return `${b}/logo-pago-nacional.png`
+  }
+  if (typeof process !== 'undefined' && process.env?.VERCEL_URL) {
+    const b = `https://${process.env.VERCEL_URL}`.replace(/\/$/, '')
+    return `${b}/logo-pago-nacional.png`
+  }
   if (typeof window !== 'undefined' && window.location?.origin) {
     return `${window.location.origin}/logo-pago-nacional.png`
   }
@@ -14,9 +27,10 @@ export function absoluteLogoUrl() {
 /**
  * Contenedor tipo “tarjeta”: fondo gris, bloque blanco, logo grande centrado y cuerpo debajo.
  * @param {string} innerContentHtml — HTML del mensaje (sin html/head/body envolvente).
+ * @param {string} [baseUrl] — Origen del sitio para el logo; si falta, se infiere en el cliente.
  */
-export function wrapEmailLayout(innerContentHtml) {
-  const logo = absoluteLogoUrl()
+export function wrapEmailLayout(innerContentHtml, baseUrl) {
+  const logo = absoluteLogoUrl(baseUrl)
   return `<!DOCTYPE html>
 <html lang="es"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width"/></head>
 <body style="margin:0;padding:0;background:#ececf0;">

@@ -41,8 +41,8 @@
   <script type="module">
     const params = new URLSearchParams(location.search)
     const id = params.get('id')
-    const resend = String(import.meta.env.VITE_RESEND_API_KEY || '').trim()
-    const sinEmailApi = !resend
+    // En desarrollo (Vite) el correo puede no enviarse sin `vercel dev`; mostramos enlace directo.
+    const sinEmailApi = import.meta.env.DEV
 
     if (sinEmailApi && id) {
       const note = document.getElementById('dev-verify-note')

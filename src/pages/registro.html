@@ -269,6 +269,7 @@
 
   <div id="alert" class="alert"></div>
 
+  <form id="registro-form" onsubmit="event.preventDefault(); registrar();">
   <div class="card">
     <div class="section-label">Datos personales</div>
     <div class="field-row">
@@ -320,9 +321,10 @@
     </div>
   </div>
 
-  <button class="btn-primary" id="btn-registro" onclick="registrar()" disabled>
+  <button type="submit" class="btn-primary" id="btn-registro" disabled>
     Crear cuenta y verificar email
   </button>
+  </form>
 
   <div class="login-link">
     Ya tenes cuenta? <a href="/login">Ingresar</a>

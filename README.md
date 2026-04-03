@@ -61,8 +61,9 @@ pago-nacional/
 
 1. Crear cuenta en https://resend.com
 2. Verificar el dominio de tu cliente (o usar el dominio de prueba de Resend)
-3. Crear API Key -> `VITE_RESEND_API_KEY`
-4. Actualizar el FROM_EMAIL en `src/lib/emails.js` con el email verificado
+3. Crear API Key y configurarla como **`RESEND_API_KEY`** en Vercel (variable de servidor; **no** uses `VITE_*` — la API de Resend no admite llamadas desde el navegador por CORS).
+4. El envío se hace desde **`/api/email`** (`api/email.js`). Ajustá el remitente (`FROM_EMAIL`) en `src/lib/emailTemplates.js` con un remitente verificado en Resend.
+5. Para probar emails en local: `npx vercel dev` (incluye la función serverless). Con solo `npm run dev` no existe `/api/email`.
 
 ### 4. Variables de entorno
 
