@@ -420,9 +420,27 @@
       })
 
       // Emails: en local pueden fallar (Resend no configurado). No bloqueamos el flujo.
+      const camioneroMail = camionero
+        ? {
+            nombre: camionero.nombre || '',
+            apellido: camionero.apellido || '',
+            email: camionero.email || email,
+            dni: camionero.dni || '',
+            cuit: camionero.cuit || '',
+            celular: camionero.celular || '',
+          }
+        : {
+            nombre,
+            apellido: '',
+            email,
+            dni: '',
+            cuit: '',
+            celular: '',
+          }
+
       await Promise.allSettled([
         enviarConfirmacionSolicitud(email, nombre, solicitud),
-        enviarNotificacionAdmin(ADMIN_EMAIL, solicitud, { nombre, email, dni: '', cuit: '', celular: '' })
+        enviarNotificacionAdmin(ADMIN_EMAIL, solicitud, camioneroMail),
       ])
 
       try {

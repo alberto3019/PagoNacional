@@ -948,8 +948,14 @@
         const updated = await aprobarSolicitudConCuenta(modalSolicitudId, cuenta)
         const row = solicitudesCache.find(s => s.id === modalSolicitudId)
         const cam = row?.camioneros || {}
+        const solicitudMail = { ...(row || {}), ...(updated || {}) }
         await Promise.allSettled([
-          enviarAprobacionConCuenta(cam.email, `${cam.nombre || ''} ${cam.apellido || ''}`.trim(), updated || row || {}, cuenta)
+          enviarAprobacionConCuenta(
+            cam.email,
+            `${cam.nombre || ''} ${cam.apellido || ''}`.trim(),
+            solicitudMail,
+            cuenta
+          ),
         ])
       } else {
         await actualizarEstado(modalSolicitudId, estado)
