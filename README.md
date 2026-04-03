@@ -137,3 +137,8 @@ Funcionalidades:
 3. Agregar rate limiting en el formulario de registro
 4. Configurar CORS en Supabase para solo permitir el dominio de produccion
 5. Usar tokens firmados para los links de verificacion de email
+
+
+cuentas
+Supabase: administracion@pagonacional.com - BuenosAires2026!
+Vercel: administracion@pagonacional.com - BuenosAires2026!

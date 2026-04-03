@@ -92,7 +92,7 @@
 
   <script type="module">
     import { obtenerCamioneroPorEmail } from '../lib/supabase.js'
-    import { datosPrestamistaParaTerminos } from '../lib/terminosEmpresa.js'
+    import { datosPrestamistaParaTerminos, ensurePrestamistaLoaded } from '../lib/terminosEmpresa.js'
 
     function setText(id, value) {
       const el = document.getElementById(id)
@@ -104,6 +104,7 @@
     }
 
     async function run() {
+      await ensurePrestamistaLoaded()
       const now = new Date()
       const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
       setText('f-dia', String(now.getDate()))

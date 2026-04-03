@@ -28,8 +28,8 @@
     <p class="muted">
       Revisá tu casilla (y spam). Cuando verifiques, vas a poder cargar tu solicitud.
     </p>
-    <p class="muted" id="local-note" style="display:none; margin-top:12px;">
-      Estás en modo local (sin emails). Usá este link de verificación:
+    <p class="muted" id="dev-verify-note" style="display:none; margin-top:12px;">
+      Si no recibís el correo (p. ej. sin API de email en desarrollo), podés verificar con este enlace:
       <a id="verify-link" href="#">Verificar cuenta</a>
     </p>
     <div class="links">
@@ -39,15 +39,13 @@
   </div>
 
   <script type="module">
-    // Si no hay Resend/Supabase configurado, mostramos el link para probar el flujo.
     const params = new URLSearchParams(location.search)
     const id = params.get('id')
-    const isLocal =
-      !import.meta.env.VITE_SUPABASE_URL ||
-      String(import.meta.env.VITE_SUPABASE_URL).includes('xxxxxxxx')
+    const resend = String(import.meta.env.VITE_RESEND_API_KEY || '').trim()
+    const sinEmailApi = !resend
 
-    if (isLocal && id) {
-      const note = document.getElementById('local-note')
+    if (sinEmailApi && id) {
+      const note = document.getElementById('dev-verify-note')
       const link = document.getElementById('verify-link')
       link.href = `/src/pages/verificar.html?id=${encodeURIComponent(id)}`
       note.style.display = 'block'

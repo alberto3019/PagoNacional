@@ -1,7 +1,7 @@
-// Datos de la empresa (prestamista) para Términos y contratos.
-// Prioridad: valores guardados en localStorage (panel admin) > variables VITE_* > texto por defecto.
+// Datos del prestamista para Términos y contratos.
+// Se persisten en Supabase (tabla prestamista_config). Las VITE_PRESTAMISTA_* del .env actúan como respaldo si la fila está vacía.
 
-const LS_KEY = 'pago_nacional_terminos_empresa_v1'
+import { obtenerPrestamistaConfig, guardarPrestamistaConfig } from './supabase.js'
 
 function defaultsFromEnv() {
   return {
@@ -13,18 +13,32 @@ function defaultsFromEnv() {
   }
 }
 
-function loadStored() {
-  try {
-    const raw = localStorage.getItem(LS_KEY)
-    if (!raw) return null
-    const p = JSON.parse(raw)
-    return typeof p === 'object' && p ? p : null
-  } catch {
-    return null
-  }
+/** undefined = aún no se cargó desde Supabase. */
+let cachedRow
+let loadPromise = null
+
+export async function ensurePrestamistaLoaded() {
+  if (cachedRow !== undefined) return
+  if (loadPromise) return loadPromise
+  loadPromise = (async () => {
+    try {
+      cachedRow = await obtenerPrestamistaConfig()
+    } catch (e) {
+      console.warn('prestamista_config:', e)
+      cachedRow = {
+        razon_social: '',
+        cuit: '',
+        domicilio: '',
+        email_legal: '',
+        telefono: '',
+      }
+    } finally {
+      loadPromise = null
+    }
+  })()
+  return loadPromise
 }
 
-/** Para el formulario del admin: env + lo guardado (el guardado pisa env). */
 export function obtenerTerminosEmpresaParaFormulario() {
   return {
     razon_social: '',
@@ -33,11 +47,11 @@ export function obtenerTerminosEmpresaParaFormulario() {
     email_legal: '',
     telefono: '',
     ...defaultsFromEnv(),
-    ...loadStored(),
+    ...(cachedRow || {}),
   }
 }
 
-export function guardarTerminosEmpresa(datos) {
+export async function guardarTerminosEmpresa(datos) {
   const next = {
     razon_social: String(datos?.razon_social || '').trim(),
     cuit: String(datos?.cuit || '').trim(),
@@ -45,13 +59,12 @@ export function guardarTerminosEmpresa(datos) {
     email_legal: String(datos?.email_legal || '').trim(),
     telefono: String(datos?.telefono || '').trim(),
   }
-  localStorage.setItem(LS_KEY, JSON.stringify(next))
+  cachedRow = await guardarPrestamistaConfig(next)
   return next
 }
 
-/** Nombre, CUIT y domicilio que usan términos y el HTML del contrato en solicitud. */
 export function datosPrestamistaParaTerminos() {
-  const d = { ...defaultsFromEnv(), ...loadStored() }
+  const d = { ...defaultsFromEnv(), ...(cachedRow || {}) }
   return {
     nombre: (d.razon_social || '').trim() || 'PAGO NACIONAL',
     cuit: (d.cuit || '').trim() || 'NO INFORMADO',

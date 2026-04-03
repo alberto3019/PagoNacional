@@ -642,7 +642,11 @@
   } from '../lib/supabase.js'
   import { exportarSolicitudes, exportarCamioneros } from '../lib/exportExcel.js'
   import { enviarAprobacionConCuenta } from '../lib/emails.js'
-  import { obtenerTerminosEmpresaParaFormulario, guardarTerminosEmpresa } from '../lib/terminosEmpresa.js'
+  import {
+    obtenerTerminosEmpresaParaFormulario,
+    guardarTerminosEmpresa,
+    ensurePrestamistaLoaded,
+  } from '../lib/terminosEmpresa.js'
 
   const ADMIN_USER = import.meta.env.VITE_ADMIN_USER || 'admin'
   const ADMIN_PASS = import.meta.env.VITE_ADMIN_PASS || '123456'
@@ -698,7 +702,8 @@
     if (name === 'terminos') cargarTerminosEmpresaForm()
   }
 
-  window.cargarTerminosEmpresaForm = function() {
+  window.cargarTerminosEmpresaForm = async function() {
+    await ensurePrestamistaLoaded()
     const d = obtenerTerminosEmpresaParaFormulario()
     document.getElementById('tc-razon').value = d.razon_social
     document.getElementById('tc-cuit').value = d.cuit
@@ -708,22 +713,32 @@
     document.getElementById('tc-msg').style.display = 'none'
   }
 
-  window.guardarTerminosEmpresaAdmin = function() {
-    guardarTerminosEmpresa({
-      razon_social: document.getElementById('tc-razon').value,
-      cuit: document.getElementById('tc-cuit').value,
-      domicilio: document.getElementById('tc-dom').value,
-      email_legal: document.getElementById('tc-email').value,
-      telefono: document.getElementById('tc-tel').value,
-    })
-    const m = document.getElementById('tc-msg')
-    m.style.display = 'inline'
-    setTimeout(() => { m.style.display = 'none' }, 4000)
+  window.guardarTerminosEmpresaAdmin = async function() {
+    try {
+      await guardarTerminosEmpresa({
+        razon_social: document.getElementById('tc-razon').value,
+        cuit: document.getElementById('tc-cuit').value,
+        domicilio: document.getElementById('tc-dom').value,
+        email_legal: document.getElementById('tc-email').value,
+        telefono: document.getElementById('tc-tel').value,
+      })
+      const m = document.getElementById('tc-msg')
+      m.style.display = 'inline'
+      setTimeout(() => { m.style.display = 'none' }, 4000)
+    } catch (e) {
+      console.error(e)
+      alert(e?.message || 'No se pudo guardar. Revisá Supabase y la consola.')
+    }
   }
 
   // ── CARGAR TODO ───────────────────────────────────────────────
   async function cargarTodo() {
-    await Promise.all([ cargarStats(), cargarSolicitudes(), cargarCuentas() ])
+    await Promise.all([
+      ensurePrestamistaLoaded(),
+      cargarStats(),
+      cargarSolicitudes(),
+      cargarCuentas(),
+    ])
   }
 
   async function cargarStats() {
@@ -820,7 +835,7 @@
   window.openTerminos = function(i) {
     const s = solicitudesCache[i]
     if (!s?.terminos_html) {
-      alert('Esta solicitud no tiene Términos y Condiciones guardados (solo se guarda en modo local por ahora).')
+      alert('Esta solicitud no tiene el contrato T&C guardado (solicitudes anteriores al cambio o sin columnas en la base).')
       return
     }
     const w = window.open('', '_blank')

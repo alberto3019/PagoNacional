@@ -216,12 +216,9 @@
 <script type="module">
   import { crearSolicitud, subirImagenCloudinary, obtenerCamioneroPorEmail, actualizarDniFotosCamionero } from '../lib/supabase.js'
   import { enviarConfirmacionSolicitud, enviarNotificacionAdmin } from '../lib/emails.js'
-  import { datosPrestamistaParaTerminos } from '../lib/terminosEmpresa.js'
+  import { datosPrestamistaParaTerminos, ensurePrestamistaLoaded } from '../lib/terminosEmpresa.js'
 
   const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL
-  const IS_LOCAL_DB =
-    !import.meta.env.VITE_SUPABASE_URL ||
-    String(import.meta.env.VITE_SUPABASE_URL).includes('xxxxxxxx')
 
   const formEl = document.getElementById('form-solicitud')
   let defaultDniFrenteUrl = ''
@@ -346,6 +343,8 @@
     btn.disabled = true
 
     try {
+      await ensurePrestamistaLoaded()
+
       const isCloudinaryConfigured =
         !!import.meta.env.VITE_CLOUDINARY_CLOUD_NAME &&
         !!import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET &&
@@ -388,7 +387,7 @@
       progressEl.textContent =
         uploadSteps > 0 ? `${uploadSteps + 1} de ${uploadSteps + 1} — Guardando solicitud...` : 'Guardando solicitud...'
 
-      // Snapshot de T&C por solicitud (modo local): cada envío guarda su propio documento aceptado.
+      // Snapshot de T&C por solicitud (persistido en Supabase).
       const nowIso = new Date().toISOString()
       const { nombre: prestamistaNombre, cuit: prestamistaCuit, domicilio: prestamistaDom } =
         datosPrestamistaParaTerminos()
@@ -415,7 +414,8 @@
         dni_frente_url: dniFrente,
         dni_dorso_url: dniDorso,
         tc_aceptado: true,
-        ...(IS_LOCAL_DB ? { terminos_html: terminosHtml, terminos_aceptados_at: nowIso } : {}),
+        terminos_html: terminosHtml,
+        terminos_aceptados_at: nowIso,
       })
 
       // Emails: en local pueden fallar (Resend no configurado). No bloqueamos el flujo.

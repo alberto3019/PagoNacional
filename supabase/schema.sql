@@ -45,6 +45,13 @@ CREATE TABLE solicitudes (
   estado TEXT NOT NULL DEFAULT 'pendiente'
     CHECK (estado IN ('pendiente', 'aprobado', 'rechazado')),
   tc_aceptado BOOLEAN NOT NULL DEFAULT FALSE,
+  cuenta_destino_id UUID,
+  cuenta_destino_alias TEXT,
+  cuenta_destino_titular TEXT,
+  cuenta_destino_cvu TEXT,
+  cuenta_destino_banco TEXT,
+  terminos_html TEXT,
+  terminos_aceptados_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -81,24 +88,54 @@ CREATE TRIGGER trigger_updated_at
   BEFORE UPDATE ON solicitudes
   FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
+-- Cuentas destino (acreditación; panel admin)
+CREATE TABLE cuentas_destino (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  alias TEXT NOT NULL,
+  titular TEXT NOT NULL,
+  cbu TEXT,
+  cvu TEXT,
+  banco TEXT,
+  activa BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Datos legales del prestamista (panel admin → pestaña Términos); una sola fila id = 1
+CREATE TABLE prestamista_config (
+  id SMALLINT PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+  razon_social TEXT DEFAULT '',
+  cuit TEXT DEFAULT '',
+  domicilio TEXT DEFAULT '',
+  email_legal TEXT DEFAULT '',
+  telefono TEXT DEFAULT '',
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+INSERT INTO prestamista_config (id) VALUES (1) ON CONFLICT (id) DO NOTHING;
+
 -- Row Level Security
 ALTER TABLE camioneros ENABLE ROW LEVEL SECURITY;
 ALTER TABLE solicitudes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE cuentas_destino ENABLE ROW LEVEL SECURITY;
+ALTER TABLE prestamista_config ENABLE ROW LEVEL SECURITY;
 
--- Politicas: solo el service_role (backend) puede leer/escribir todo
-CREATE POLICY "service_role full access camioneros"
-  ON camioneros FOR ALL USING (auth.role() = 'service_role');
+-- La SPA usa la clave "anon" en el navegador (VITE_SUPABASE_ANON_KEY).
+-- Sin políticas para el rol anon, Postgres bloquea SELECT/INSERT/UPDATE.
+-- La anon key es pública (va en el bundle): cualquiera puede pegarle a la API de Supabase.
+-- Evolución recomendada: Supabase Auth + RLS por usuario, o backend/Edge Functions con service_role.
+CREATE POLICY anon_camioneros_all
+  ON camioneros FOR ALL TO anon USING (true) WITH CHECK (true);
 
-CREATE POLICY "service_role full access solicitudes"
-  ON solicitudes FOR ALL USING (auth.role() = 'service_role');
+CREATE POLICY anon_solicitudes_all
+  ON solicitudes FOR ALL TO anon USING (true) WITH CHECK (true);
 
--- Columnas opcionales en solicitudes (aprobación / cuenta destino). Ejecutar si faltan:
--- ALTER TABLE solicitudes ADD COLUMN IF NOT EXISTS cuenta_destino_id UUID;
--- ALTER TABLE solicitudes ADD COLUMN IF NOT EXISTS cuenta_destino_alias TEXT;
--- ALTER TABLE solicitudes ADD COLUMN IF NOT EXISTS cuenta_destino_titular TEXT;
--- ALTER TABLE solicitudes ADD COLUMN IF NOT EXISTS cuenta_destino_cvu TEXT;
--- ALTER TABLE solicitudes ADD COLUMN IF NOT EXISTS cuenta_destino_banco TEXT;
+CREATE POLICY anon_cuentas_destino_all
+  ON cuentas_destino FOR ALL TO anon USING (true) WITH CHECK (true);
 
--- Storage bucket para imagenes DNI
+CREATE POLICY anon_prestamista_config_all
+  ON prestamista_config FOR ALL TO anon USING (true) WITH CHECK (true);
+
+-- Storage bucket para imagenes DNI (ignorar si ya existe)
 INSERT INTO storage.buckets (id, name, public)
-  VALUES ('dni-fotos', 'dni-fotos', false);
+  VALUES ('dni-fotos', 'dni-fotos', false)
+  ON CONFLICT (id) DO NOTHING;
