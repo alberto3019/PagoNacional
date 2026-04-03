@@ -1,7 +1,20 @@
 // Plantillas y armado del payload Resend (usa en /api/email en el servidor).
 import { wrapEmailLayout } from './emailLayout.js'
 
-const FROM_EMAIL = 'Pago Nacional <notificaciones@pagonacional.com.ar>'
+/** Remitente Resend: variable RESEND_FROM_EMAIL (servidor) o dominio verificado en resend.com/domains */
+function getFromEmail() {
+  const raw =
+    typeof process !== 'undefined' && process.env?.RESEND_FROM_EMAIL
+      ? String(process.env.RESEND_FROM_EMAIL).trim()
+      : ''
+  if (raw) {
+    if (raw.includes('<')) return raw
+    return `Pago Nacional <${raw}>`
+  }
+  return 'Pago Nacional <notificaciones@pagonacional.com.ar>'
+}
+
+const FROM_EMAIL = getFromEmail()
 
 function escapeHtml(s) {
   return String(s ?? '')

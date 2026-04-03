@@ -62,7 +62,7 @@ pago-nacional/
 1. Crear cuenta en https://resend.com
 2. Verificar el dominio de tu cliente (o usar el dominio de prueba de Resend)
 3. Crear API Key y configurarla como **`RESEND_API_KEY`** en Vercel (variable de servidor; **no** uses `VITE_*` — la API de Resend no admite llamadas desde el navegador por CORS).
-4. El envío se hace desde **`/api/email`** (`api/email.js`). Ajustá el remitente (`FROM_EMAIL`) en `src/lib/emailTemplates.js` con un remitente verificado en Resend.
+4. El envío se hace desde **`/api/email`** (`api/email.js`). El remitente sale de **`RESEND_FROM_EMAIL`** en Vercel (opcional). Si no la definís, se usa `notificaciones@pagonacional.com.ar`, y **ese dominio tiene que estar verificado** en [Resend → Domains](https://resend.com/domains) (registrá los registros DNS que te indiquen). Para pruebas sin dominio propio podés usar `RESEND_FROM_EMAIL=onboarding@resend.dev` (con las limitaciones que indique Resend).
 5. Para probar emails en local: `npx vercel dev` (incluye la función serverless). Con solo `npm run dev` no existe `/api/email`.
 
 ### 4. Variables de entorno
