@@ -1,0 +1,418 @@
+<!-- src/pages/registro.html -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Crear cuenta — Pago Nacional</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy: #12122a;
+      --navy-mid: #1e1e40;
+      --accent: #4f46e5;
+      --text: #1a1a2e;
+      --text-muted: #6b7280;
+      --border: #e5e7eb;
+      --bg: #f9f9f7;
+      --white: #ffffff;
+      --success: #059669;
+      --danger: #dc2626;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      min-height: 100vh;
+      color: var(--text);
+    }
+
+    .header {
+      background: var(--navy);
+      padding: 10px 16px;
+      min-height: 68px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .brand {
+      flex: 1; min-width: 0; max-width: calc(100% - 130px); height: 52px;
+      display: flex; align-items: center; justify-content: flex-start;
+      background: transparent; line-height: 0;
+    }
+    .brand img {
+      display: block; max-width: 100%; max-height: 100%; width: auto; height: auto;
+      object-fit: contain; object-position: left center;
+    }
+    .header-sub {
+      flex-shrink: 0; max-width: 38%; text-align: right; line-height: 1.35;
+      color: rgba(255,255,255,0.5); font-size: 10px;
+    }
+    @media (min-width: 480px) {
+      .header-sub { font-size: 12px; max-width: 46%; }
+    }
+    @media (min-width: 768px) {
+      .header { min-height: 72px; padding: 12px 20px; }
+      .brand { height: 64px; max-width: min(560px, calc(100% - 160px)); }
+    }
+    @media (min-width: 1024px) {
+      .brand { height: 72px; max-width: min(640px, calc(100% - 180px)); }
+    }
+    @media (min-width: 1280px) {
+      .brand { height: 76px; max-width: min(700px, calc(100% - 200px)); }
+    }
+
+    .steps {
+      background: var(--navy-mid);
+      display: flex;
+      height: 3px;
+    }
+
+    .step-bar {
+      height: 100%;
+      background: #4f46e5;
+      transition: width 0.4s ease;
+    }
+
+    .container {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 32px 20px 60px;
+    }
+
+    .page-title {
+      font-family: 'DM Serif Display', serif;
+      font-size: 26px;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+
+    .page-sub {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-bottom: 28px;
+      line-height: 1.6;
+    }
+
+    .step-label {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 8px;
+    }
+
+    .card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 16px;
+    }
+
+    .section-label {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .field { margin-bottom: 16px; }
+    .field:last-child { margin-bottom: 0; }
+
+    .field label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+
+    .field input {
+      width: 100%;
+      padding: 11px 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 15px;
+      font-family: 'DM Sans', sans-serif;
+      color: var(--text);
+      background: var(--white);
+      transition: border-color 0.15s;
+      -webkit-appearance: none;
+    }
+
+    .field input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .field input.error { border-color: var(--danger); }
+
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    .field-error {
+      font-size: 12px;
+      color: var(--danger);
+      margin-top: 4px;
+    }
+
+    .tc-block {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin-bottom: 20px;
+    }
+
+    .tc-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .tc-row input[type=checkbox] {
+      width: 18px;
+      height: 18px;
+      min-width: 18px;
+      margin-top: 1px;
+      accent-color: var(--accent);
+    }
+
+    .tc-row span {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    .tc-row a {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .btn-primary {
+      width: 100%;
+      padding: 15px;
+      background: var(--navy);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 500;
+      font-family: 'DM Sans', sans-serif;
+      cursor: pointer;
+      transition: background 0.15s, opacity 0.15s;
+      letter-spacing: -0.2px;
+    }
+
+    .btn-primary:hover { background: #0f0f22; }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .login-link {
+      text-align: center;
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 16px;
+    }
+
+    .login-link a { color: var(--accent); text-decoration: none; font-weight: 500; }
+
+    .alert {
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      margin-bottom: 16px;
+      display: none;
+    }
+
+    .alert.success { background: #d1fae5; color: #065f46; display: block; }
+    .alert.error   { background: #fee2e2; color: #991b1b; display: block; }
+
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <span class="brand"><img src="/logo-pago-nacional.png?v=5" alt="Pago Nacional" width="1063" height="378" decoding="async" /></span>
+  <span class="header-sub">Sistema de cambio de echeqs</span>
+</div>
+<div class="steps">
+  <div class="step-bar" style="width: 50%"></div>
+</div>
+
+<div class="container">
+  <div class="step-label">Paso 1 de 2</div>
+  <h1 class="page-title">Crear cuenta</h1>
+  <p class="page-sub">Ingresa tus datos personales para registrarte. Una vez verificado tu email, podras cargar tu solicitud de echeq.</p>
+
+  <div id="alert" class="alert"></div>
+
+  <div class="card">
+    <div class="section-label">Datos personales</div>
+    <div class="field-row">
+      <div class="field">
+        <label>Nombre</label>
+        <input type="text" id="nombre" placeholder="Juan" autocomplete="given-name" />
+      </div>
+      <div class="field">
+        <label>Apellido</label>
+        <input type="text" id="apellido" placeholder="Garcia" autocomplete="family-name" />
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>N° de documento</label>
+        <input type="text" id="dni" placeholder="32.456.789" inputmode="numeric" />
+      </div>
+      <div class="field">
+        <label>CUIT</label>
+        <input type="text" id="cuit" placeholder="20-32456789-1" inputmode="numeric" />
+      </div>
+    </div>
+    <div class="field">
+      <label>Celular</label>
+      <input type="tel" id="celular" placeholder="+54 9 11 1234-5678" autocomplete="tel" />
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-label">Acceso</div>
+    <div class="field">
+      <label>Email</label>
+      <input type="email" id="email" placeholder="juan@email.com" autocomplete="email" inputmode="email" />
+    </div>
+    <div class="field">
+      <label>Contrasena</label>
+      <input type="password" id="password" placeholder="Minimo 8 caracteres" autocomplete="new-password" />
+    </div>
+  </div>
+
+  <div class="tc-block">
+    <div class="tc-row">
+      <input type="checkbox" id="tc" />
+      <span>
+        He leido y acepto los
+        <a href="#" id="link-terminos-registro" onclick="abrirTerminosRegistro(event)">Terminos y Condiciones</a>
+        del servicio de Pago Nacional
+      </span>
+    </div>
+  </div>
+
+  <button class="btn-primary" id="btn-registro" onclick="registrar()" disabled>
+    Crear cuenta y verificar email
+  </button>
+
+  <div class="login-link">
+    Ya tenes cuenta? <a href="/src/pages/login.html">Ingresar</a>
+  </div>
+</div>
+
+<script type="module">
+  import { registrarCamionero } from '../lib/supabase.js'
+  import { enviarVerificacionEmail } from '../lib/emails.js'
+
+  // No permitir avanzar si no acepta T&C
+  const tcEl = document.getElementById('tc')
+  const btnEl = document.getElementById('btn-registro')
+  function syncTc() { btnEl.disabled = !tcEl.checked }
+  tcEl.addEventListener('change', syncTc)
+  syncTc()
+
+  window.registrar = async function() {
+    const nombre   = document.getElementById('nombre').value.trim()
+    const apellido = document.getElementById('apellido').value.trim()
+    const dni      = document.getElementById('dni').value.trim()
+    const cuit     = document.getElementById('cuit').value.trim()
+    const celular  = document.getElementById('celular').value.trim()
+    const email    = document.getElementById('email').value.trim()
+    const password = document.getElementById('password').value
+    const tc       = document.getElementById('tc').checked
+
+    const alert = document.getElementById('alert')
+    alert.className = 'alert'
+    alert.textContent = ''
+
+    if (!nombre || !apellido || !dni || !cuit || !celular || !email || !password) {
+      alert.className = 'alert error'
+      alert.textContent = 'Por favor completa todos los campos.'
+      return
+    }
+
+    if (password.length < 8) {
+      alert.className = 'alert error'
+      alert.textContent = 'La contrasena debe tener al menos 8 caracteres.'
+      return
+    }
+
+    if (!tc) {
+      alert.className = 'alert error'
+      alert.textContent = 'Debes aceptar los Terminos y Condiciones.'
+      return
+    }
+
+    const btn = document.getElementById('btn-registro')
+    btn.disabled = true
+    btn.innerHTML = '<span class="spinner"></span>Creando cuenta...'
+
+    try {
+      const camionero = await registrarCamionero({
+        nombre, apellido, dni, cuit, celular, email, password
+      })
+
+      // Guardar en sessionStorage para facilitar el flujo post-verificación
+      sessionStorage.setItem('camionero_id', camionero.id)
+      sessionStorage.setItem('camionero_email', email)
+      sessionStorage.setItem('camionero_nombre', nombre)
+
+      // Generar link de verificacion (en prod usar token real)
+      const linkVerificacion = `${window.location.origin}/src/pages/verificar.html?id=${camionero.id}`
+      await enviarVerificacionEmail(email, nombre, linkVerificacion)
+
+      window.location.href = `/src/pages/verificar-pendiente.html?id=${camionero.id}`
+    } catch (err) {
+      console.error(err)
+      alert.className = 'alert error'
+      alert.textContent =
+        err?.message?.includes('duplicate')
+          ? 'Ya existe una cuenta con ese email o DNI.'
+          : (err?.message || 'Ocurrio un error. Intenta de nuevo.')
+      btn.disabled = false
+      btn.textContent = 'Crear cuenta y verificar email'
+    }
+  }
+
+  window.abrirTerminosRegistro = function(event) {
+    event.preventDefault()
+    const params = new URLSearchParams({
+      nombre: document.getElementById('nombre').value.trim(),
+      apellido: document.getElementById('apellido').value.trim(),
+      dni: document.getElementById('dni').value.trim()
+    })
+    window.open(`/src/pages/terminos.html?${params.toString()}`, '_blank')
+  }
+</script>
+
+</body>
+</html>

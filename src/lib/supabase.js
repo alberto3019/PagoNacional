@@ -1,0 +1,368 @@
+// src/lib/supabase.js
+// Reemplazar con tus keys de Supabase
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
+
+import { createClient } from '@supabase/supabase-js'
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+import {
+  registrarCamioneroLocal,
+  obtenerCamioneroPorEmailLocal,
+  verificarEmailLocal,
+  listarCamionerosLocal,
+  crearSolicitudLocal,
+  listarSolicitudesLocal,
+  obtenerSolicitudesDeCamioneroLocal,
+  actualizarEstadoLocal,
+  aprobarSolicitudConCuentaLocal,
+  listarCuentasDestinoLocal,
+  crearCuentaDestinoLocal,
+  actualizarCuentaDestinoLocal,
+  eliminarCuentaDestinoLocal,
+  obtenerStatsLocal,
+  actualizarDniFotosCamioneroLocal,
+  actualizarCbuCvuCamioneroLocal,
+  solicitarResetPasswordLocal,
+  restablecerPasswordConTokenLocal,
+} from './localDb.js'
+
+function isSupabaseConfigured() {
+  return !!(
+    SUPABASE_URL &&
+    SUPABASE_ANON_KEY &&
+    !SUPABASE_URL.includes('xxxxxxxx') &&
+    !SUPABASE_ANON_KEY.includes('...')
+  )
+}
+
+// ─── CAMIONEROS ───────────────────────────────────────────────
+
+export async function registrarCamionero(datos) {
+  if (!isSupabaseConfigured()) return await registrarCamioneroLocal(datos)
+
+  const payload = { ...(datos || {}) }
+  if (payload.password != null) payload.password = String(payload.password)
+  const { data, error } = await supabase.from('camioneros').insert([payload]).select().single()
+  if (error) throw error
+  return data
+}
+
+export async function obtenerCamioneroPorEmail(email) {
+  if (!isSupabaseConfigured()) return await obtenerCamioneroPorEmailLocal(email)
+  const { data, error } = await supabase
+    .from('camioneros')
+    .select('*')
+    .eq('email', email)
+    .single()
+  if (error) throw error
+  return data
+}
+
+/** Guarda en el perfil las URLs de DNI (Cloudinary o data URL) para reutilizarlas en solicitudes. */
+/** Genera token y (en local/Supabase) lo guarda; el caller debe enviar el email con el link. */
+export async function solicitarResetPassword(emailRaw) {
+  const email = String(emailRaw || '')
+    .trim()
+    .toLowerCase()
+  if (!email) return { sent: false }
+
+  if (!isSupabaseConfigured()) {
+    return await solicitarResetPasswordLocal(email)
+  }
+
+  const { data: c, error: qErr } = await supabase
+    .from('camioneros')
+    .select('id,email,nombre,email_verificado')
+    .eq('email', email)
+    .maybeSingle()
+  if (qErr) throw qErr
+  if (!c?.id || !c.email_verificado) return { sent: false }
+
+  const token =
+    (globalThis.crypto?.randomUUID?.() || Math.random().toString(36).slice(2)) +
+    (globalThis.crypto?.randomUUID?.() || Math.random().toString(36).slice(2))
+  const password_reset_expires_at = new Date(Date.now() + 60 * 60 * 1000).toISOString()
+
+  const { error: uErr } = await supabase
+    .from('camioneros')
+    .update({ password_reset_token: token, password_reset_expires_at })
+    .eq('id', c.id)
+  if (uErr) throw uErr
+
+  return {
+    sent: true,
+    email: c.email,
+    nombre: c.nombre || '',
+    token,
+  }
+}
+
+export async function restablecerPasswordConToken(token, newPassword) {
+  if (!isSupabaseConfigured()) {
+    return await restablecerPasswordConTokenLocal(token, newPassword)
+  }
+  const t = String(token || '').trim()
+  if (!t) throw new Error('Enlace inválido.')
+  if (!newPassword || String(newPassword).length < 8) {
+    throw new Error('La contraseña debe tener al menos 8 caracteres.')
+  }
+
+  const { data: c, error: qErr } = await supabase
+    .from('camioneros')
+    .select('id,password_reset_expires_at')
+    .eq('password_reset_token', t)
+    .maybeSingle()
+  if (qErr) throw qErr
+  if (!c?.id) throw new Error('El enlace no es válido o ya fue usado.')
+  if (!c.password_reset_expires_at || new Date(c.password_reset_expires_at) < new Date()) {
+    throw new Error('El enlace expiró. Solicitá uno nuevo desde el login.')
+  }
+
+  const { error: uErr } = await supabase
+    .from('camioneros')
+    .update({
+      password: String(newPassword),
+      password_reset_token: null,
+      password_reset_expires_at: null,
+    })
+    .eq('id', c.id)
+  if (uErr) throw uErr
+}
+
+export async function actualizarDniFotosCamionero(camioneroId, { dni_frente_url, dni_dorso_url }) {
+  if (!isSupabaseConfigured()) {
+    return await actualizarDniFotosCamioneroLocal(camioneroId, { dni_frente_url, dni_dorso_url })
+  }
+  const payload = {}
+  if (dni_frente_url != null) payload.dni_frente_url = dni_frente_url
+  if (dni_dorso_url != null) payload.dni_dorso_url = dni_dorso_url
+  if (!Object.keys(payload).length) return
+  const { error } = await supabase.from('camioneros').update(payload).eq('id', camioneroId)
+  if (error) throw error
+}
+
+/** CBU/CVU guardado en perfil para autocompletar solicitudes (22 dígitos o vacío). */
+export async function actualizarCbuCvuCamionero(camioneroId, cbu_cvu) {
+  const v = String(cbu_cvu ?? '')
+    .replace(/\D/g, '')
+    .slice(0, 22)
+  if (!isSupabaseConfigured()) {
+    return await actualizarCbuCvuCamioneroLocal(camioneroId, v)
+  }
+  const { error } = await supabase.from('camioneros').update({ cbu_cvu: v || null }).eq('id', camioneroId)
+  if (error) throw error
+}
+
+export async function verificarEmail(camioneroId) {
+  if (!isSupabaseConfigured()) return await verificarEmailLocal(camioneroId)
+  const { error } = await supabase
+    .from('camioneros')
+    .update({ email_verificado: true })
+    .eq('id', camioneroId)
+  if (error) throw error
+}
+
+export async function listarCamioneros() {
+  if (!isSupabaseConfigured()) return await listarCamionerosLocal()
+  const { data, error } = await supabase
+    .from('camioneros')
+    .select('*, solicitudes(count)')
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return data
+}
+
+// ─── SOLICITUDES ──────────────────────────────────────────────
+
+export async function crearSolicitud(datos) {
+  if (!isSupabaseConfigured()) return await crearSolicitudLocal(datos)
+  const { data, error } = await supabase
+    .from('solicitudes')
+    .insert([datos])
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function listarSolicitudes({ busqueda, estado, desde, hasta } = {}) {
+  if (!isSupabaseConfigured()) return await listarSolicitudesLocal({ busqueda, estado, desde, hasta })
+  let query = supabase
+    .from('solicitudes')
+    .select(`
+      *,
+      camioneros (
+        nombre, apellido, dni, cuit, celular, email
+      )
+    `)
+    .order('created_at', { ascending: false })
+
+  if (estado) query = query.eq('estado', estado)
+  if (desde)  query = query.gte('created_at', desde)
+  if (hasta)  query = query.lte('created_at', hasta + 'T23:59:59')
+  if (busqueda) {
+    query = query.or(
+      `numero.ilike.%${busqueda}%,numero_echeq.ilike.%${busqueda}%,banco_emisor.ilike.%${busqueda}%`
+    )
+  }
+
+  const { data, error } = await query
+  if (error) throw error
+  return data
+}
+
+export async function obtenerSolicitudesDeCamionero(camioneroId) {
+  if (!isSupabaseConfigured()) return await obtenerSolicitudesDeCamioneroLocal(camioneroId)
+  const { data, error } = await supabase
+    .from('solicitudes')
+    .select('*')
+    .eq('camionero_id', camioneroId)
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return data
+}
+
+export async function actualizarEstado(solicitudId, estado) {
+  if (!isSupabaseConfigured()) return await actualizarEstadoLocal(solicitudId, estado)
+  const { error } = await supabase
+    .from('solicitudes')
+    .update({ estado })
+    .eq('id', solicitudId)
+  if (error) throw error
+}
+
+export async function aprobarSolicitudConCuenta(solicitudId, cuenta) {
+  if (!isSupabaseConfigured()) return await aprobarSolicitudConCuentaLocal(solicitudId, cuenta)
+  // En Supabase productivo requiere columnas cuenta_destino_* en la tabla solicitudes.
+  const { data, error } = await supabase
+    .from('solicitudes')
+    .update({
+      estado: 'aprobado',
+      cuenta_destino_id: cuenta?.id || null,
+      cuenta_destino_alias: cuenta?.alias || null,
+      cuenta_destino_titular: cuenta?.titular || null,
+      cuenta_destino_cvu: cuenta?.cvu || cuenta?.cbu || null,
+      cuenta_destino_banco: cuenta?.banco || null,
+    })
+    .eq('id', solicitudId)
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function listarCuentasDestino() {
+  if (!isSupabaseConfigured()) return await listarCuentasDestinoLocal()
+  const { data, error } = await supabase
+    .from('cuentas_destino')
+    .select('*')
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return data
+}
+
+/** Titular, alias y banco obligatorios; al menos uno entre CBU y CVU. */
+function validarDatosCuentaDestino(datos) {
+  const titular = String(datos?.titular ?? '').trim()
+  const alias = String(datos?.alias ?? '').trim()
+  const cbu = String(datos?.cbu ?? '').trim()
+  const cvu = String(datos?.cvu ?? '').trim()
+  const banco = String(datos?.banco ?? '').trim()
+  if (!titular) throw new Error('El titular es obligatorio.')
+  if (!alias) throw new Error('El alias es obligatorio.')
+  if (!banco) throw new Error('El banco es obligatorio.')
+  if (!cbu && !cvu) throw new Error('Debés ingresar al menos un CBU o un CVU.')
+  return { titular, alias, cbu, cvu, banco }
+}
+
+export async function crearCuentaDestino(datos) {
+  const v = validarDatosCuentaDestino(datos)
+  if (!isSupabaseConfigured()) return await crearCuentaDestinoLocal(v)
+  const payload = {
+    alias: v.alias,
+    titular: v.titular,
+    cbu: v.cbu || null,
+    cvu: v.cvu || null,
+    banco: v.banco || null,
+    activa: true,
+  }
+  const { data, error } = await supabase
+    .from('cuentas_destino')
+    .insert([payload])
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function actualizarCuentaDestino(cuentaId, datos) {
+  const v = validarDatosCuentaDestino(datos)
+  if (!isSupabaseConfigured()) return await actualizarCuentaDestinoLocal(cuentaId, v)
+  const payload = {
+    alias: v.alias,
+    titular: v.titular,
+    cbu: v.cbu || null,
+    cvu: v.cvu || null,
+    banco: v.banco || null,
+  }
+  const { data, error } = await supabase
+    .from('cuentas_destino')
+    .update(payload)
+    .eq('id', cuentaId)
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function eliminarCuentaDestino(cuentaId) {
+  if (!isSupabaseConfigured()) return await eliminarCuentaDestinoLocal(cuentaId)
+  const { error } = await supabase
+    .from('cuentas_destino')
+    .delete()
+    .eq('id', cuentaId)
+  if (error) throw error
+}
+
+// ─── STORAGE (Cloudinary via fetch) ───────────────────────────
+
+export async function subirImagenCloudinary(archivo, carpeta = 'dni') {
+  const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME
+  const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET
+
+  const formData = new FormData()
+  formData.append('file', archivo)
+  formData.append('upload_preset', UPLOAD_PRESET)
+  formData.append('folder', `pago-nacional/${carpeta}`)
+
+  const res = await fetch(
+    `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
+    { method: 'POST', body: formData }
+  )
+  if (!res.ok) throw new Error('Error subiendo imagen a Cloudinary')
+  const json = await res.json()
+  return json.secure_url
+}
+
+// ─── STATS PARA ADMIN ─────────────────────────────────────────
+
+export async function obtenerStats() {
+  if (!isSupabaseConfigured()) return await obtenerStatsLocal()
+  const { data, error } = await supabase
+    .from('solicitudes')
+    .select('estado,monto')
+  if (error) throw error
+
+  const total = data.length
+  const pendiente  = data.filter(s => s.estado === 'pendiente').length
+  const aprobado   = data.filter(s => s.estado === 'aprobado').length
+  const rechazado  = data.filter(s => s.estado === 'rechazado').length
+  const monto_total = data.reduce((acc, s) => acc + (Number(s.monto) || 0), 0)
+  const monto_aprobado = data.reduce(
+    (acc, s) => acc + (s.estado === 'aprobado' ? (Number(s.monto) || 0) : 0),
+    0
+  )
+
+  return { total, pendiente, aprobado, rechazado, monto_total, monto_aprobado }
+}

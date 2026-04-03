@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mi perfil — Pago Nacional</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy:#12122a; --accent:#4f46e5; --text:#1a1a2e; --text-muted:#6b7280;
+      --border:#e5e7eb; --bg:#f9f9f7; --white:#ffffff; --danger:#dc2626; --success:#059669;
+    }
+    body { font-family:'DM Sans',sans-serif; background:var(--bg); min-height:100vh; color:var(--text); }
+    .header {
+      background: var(--navy); padding: 10px 14px; min-height: 68px;
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    }
+    .left {
+      flex: 1;
+      min-width: 0;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .brand {
+      flex: 1;
+      min-width: 0;
+      height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      cursor: pointer;
+      background: transparent;
+      line-height: 0;
+    }
+    .brand img {
+      display: block;
+      max-width: 100%;
+      max-height: 100%;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      object-position: left center;
+    }
+    .header-sub {
+      flex-shrink: 0;
+      max-width: 34%;
+      text-align: right;
+      line-height: 1.3;
+      color: rgba(255,255,255,0.5);
+      font-size: 10px;
+    }
+    @media (min-width: 480px) {
+      .header-sub { font-size: 12px; max-width: 40%; }
+    }
+    .header-aside { flex-shrink: 0; display: flex; align-items: center; }
+    @media (min-width: 768px) {
+      .header { min-height: 74px; padding: 12px 18px; }
+      .brand { height: 64px; }
+    }
+    @media (min-width: 1024px) {
+      .brand { height: 70px; padding: 9px 16px; }
+    }
+    @media (min-width: 1280px) {
+      .brand { height: 74px; }
+    }
+    .back {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.2);
+      background: transparent;
+      color: rgba(255,255,255,0.9);
+      cursor: pointer;
+      font-size: 18px;
+      line-height: 1;
+    }
+    .back:hover { border-color: rgba(255,255,255,0.5); color: #fff; }
+    .container { max-width: 520px; margin: 0 auto; padding: 28px 20px 110px; }
+    .title { font-family:'DM Serif Display',serif; font-size: 26px; margin-bottom: 6px; }
+    .sub { color: var(--text-muted); font-size: 14px; margin-bottom: 18px; line-height: 1.6; }
+    .card { background:var(--white); border:1px solid var(--border); border-radius: 12px; padding: 18px; }
+    .section { font-size: 11px; font-weight: 500; letter-spacing: 0.8px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; }
+    .row { display:flex; justify-content:space-between; gap: 12px; padding: 9px 0; border-bottom: 1px solid #f3f4f6; font-size: 14px; }
+    .row:last-child { border-bottom: none; }
+    .label { color: var(--text-muted); }
+    .val { font-weight: 500; text-align:right; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 12px; }
+    .alert { padding: 12px 16px; border-radius: 10px; font-size: 13px; margin-bottom: 12px; display:none; }
+    .alert.error { background:#fee2e2; color:#991b1b; display:block; }
+    .alert.success { background:#d1fae5; color:#065f46; display:block; }
+    .field { margin-bottom: 16px; }
+    .field:last-child { margin-bottom: 0; }
+    .field label { display: block; font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 6px; }
+    .field input[type=text] {
+      width: 100%; padding: 11px 14px; border: 1px solid var(--border); border-radius: 8px;
+      font-size: 15px; font-family: 'DM Sans', sans-serif; color: var(--text); background: var(--white);
+    }
+    .field input[type=text]:focus { outline: none; border-color: var(--accent); }
+    .upload-zone {
+      border: 1.5px dashed var(--border); border-radius: 8px; padding: 20px;
+      text-align: center; cursor: pointer; transition: border-color 0.15s, background 0.15s;
+      background: var(--bg);
+    }
+    .upload-zone:hover { border-color: var(--accent); background: #f0f0fe; }
+    .upload-zone.has-file { border-color: var(--success); background: #f0fdf4; }
+    .upload-zone input[type=file] { display: none; }
+    .upload-label { font-size: 13px; color: var(--text-muted); margin-top: 6px; }
+    .upload-icon { font-size: 24px; color: var(--text-muted); margin-bottom: 6px; }
+    .upload-filename { font-size: 12px; color: var(--success); font-weight: 500; margin-top: 4px; }
+    .preview-img { width: 100%; max-height: 180px; object-fit: cover; border-radius: 6px; margin-top: 10px; display: none; }
+    .btn-primary {
+      width: 100%; padding: 14px; background: var(--navy); color: #fff; border: none; border-radius: 8px;
+      font-size: 15px; font-weight: 500; font-family: 'DM Sans', sans-serif; cursor: pointer;
+    }
+    .btn-primary:hover { background: #0f0f22; }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .spinner { display:inline-block; width:16px; height:16px; border:2px solid rgba(255,255,255,0.3); border-top-color:#fff; border-radius:50%; animation: spin 0.7s linear infinite; margin-right:8px; vertical-align:middle; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .dni-hint { font-size: 13px; color: var(--text-muted); line-height: 1.55; margin-bottom: 14px; }
+    .card-dni { margin-top: 14px; }
+
+    .bottom {
+      position: fixed; left: 0; right: 0; bottom: 0;
+      background: rgba(249,249,247,0.85);
+      backdrop-filter: blur(8px);
+      border-top: 1px solid var(--border);
+      padding: 12px 14px;
+      display:flex; justify-content:center;
+    }
+    .bottom-inner { width: 100%; max-width: 520px; display:grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .bbtn {
+      display:flex; align-items:center; justify-content:center;
+      padding: 13px 14px; border-radius: 12px; border: 1px solid var(--border);
+      background: var(--white); color: var(--text); font-weight: 600; cursor:pointer;
+      font-family:'DM Sans',sans-serif;
+    }
+    .bbtn.primary { background: var(--white); border-color: var(--navy); color: var(--navy); }
+    .bbtn:active { transform: translateY(1px); }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="left">
+      <button class="back" onclick="goBack()" aria-label="Volver">←</button>
+      <span class="brand" onclick="goHome()"><img src="/logo-pago-nacional.png?v=5" alt="Pago Nacional" width="1063" height="378" decoding="async" /></span>
+    </div>
+    <div class="header-aside">
+      <span class="header-sub">Mi perfil</span>
+    </div>
+  </div>
+
+  <div class="container">
+    <h1 class="title">Mi perfil</h1>
+    <p class="sub">Estos son tus datos de registro.</p>
+    <div id="alert" class="alert"></div>
+
+    <div class="card">
+      <div class="section">Datos</div>
+      <div class="row"><span class="label">Nombre</span><span class="val" id="p-nombre">—</span></div>
+      <div class="row"><span class="label">Apellido</span><span class="val" id="p-apellido">—</span></div>
+      <div class="row"><span class="label">DNI</span><span class="val mono" id="p-dni">—</span></div>
+      <div class="row"><span class="label">CUIT</span><span class="val mono" id="p-cuit">—</span></div>
+      <div class="row"><span class="label">Email</span><span class="val" id="p-email">—</span></div>
+      <div class="row"><span class="label">Celular</span><span class="val" id="p-cel">—</span></div>
+    </div>
+
+    <div class="card" style="margin-top:14px">
+      <div class="section">CBU / CVU</div>
+      <p class="dni-hint">Si lo guardás acá (22 dígitos), se va a completar solo en el formulario de nueva solicitud. Podés borrarlo y guardar para dejarlo vacío.</p>
+      <div class="field" style="margin-bottom:14px">
+        <label for="cbu-perfil">CBU / CVU</label>
+        <input type="text" id="cbu-perfil" maxlength="22" inputmode="numeric" autocomplete="off" placeholder="22 dígitos" />
+      </div>
+      <button type="button" class="btn-primary" id="btn-guardar-cbu" onclick="guardarCbuPerfil()">Guardar CBU / CVU</button>
+    </div>
+
+    <div class="card card-dni">
+      <div class="section">Fotos del DNI</div>
+      <p class="dni-hint">Las mismas fotos se usan en tus solicitudes. Podés actualizarlas cuando quieras. También podés cargarlas al hacer una nueva solicitud.</p>
+      <div class="field">
+        <label>DNI — frente</label>
+        <div class="upload-zone" id="zone-frente" onclick="document.getElementById('file-frente').click()">
+          <div class="upload-icon">[ ]</div>
+          <div class="upload-label">Toca para sacar foto o subir imagen</div>
+          <div class="upload-filename" id="name-frente"></div>
+          <img class="preview-img" id="preview-frente" alt="" />
+          <input type="file" id="file-frente" accept="image/*" capture="environment" onchange="previewDni(this,'frente')" />
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:14px">
+        <label>DNI — dorso</label>
+        <div class="upload-zone" id="zone-dorso" onclick="document.getElementById('file-dorso').click()">
+          <div class="upload-icon">[ ]</div>
+          <div class="upload-label">Toca para sacar foto o subir imagen</div>
+          <div class="upload-filename" id="name-dorso"></div>
+          <img class="preview-img" id="preview-dorso" alt="" />
+          <input type="file" id="file-dorso" accept="image/*" capture="environment" onchange="previewDni(this,'dorso')" />
+        </div>
+      </div>
+      <button type="button" class="btn-primary" id="btn-guardar-dni" onclick="guardarDniPerfil()">Guardar fotos del DNI</button>
+    </div>
+  </div>
+
+  <div class="bottom">
+    <div class="bottom-inner">
+      <button class="bbtn primary" onclick="goNuevaSolicitud()">Nueva solicitud</button>
+      <button class="bbtn" onclick="goPerfil()">Mi perfil</button>
+    </div>
+  </div>
+
+  <script type="module">
+    import { obtenerCamioneroPorEmail, subirImagenCloudinary, actualizarDniFotosCamionero, actualizarCbuCvuCamionero } from '../lib/supabase.js'
+
+    const alertEl = document.getElementById('alert')
+    let storedFrenteUrl = ''
+    let storedDorsoUrl = ''
+
+    function clearAlert() {
+      alertEl.className = 'alert'
+      alertEl.textContent = ''
+    }
+    function showError(msg) {
+      alertEl.className = 'alert error'
+      alertEl.textContent = msg
+    }
+    function showSuccess(msg) {
+      alertEl.className = 'alert success'
+      alertEl.textContent = msg
+    }
+
+    function setDniPreview(lado, url, nameText) {
+      const zone = document.getElementById(`zone-${lado}`)
+      const name = document.getElementById(`name-${lado}`)
+      const preview = document.getElementById(`preview-${lado}`)
+      if (url) {
+        zone.classList.add('has-file')
+        name.textContent = nameText || 'Guardada'
+        preview.src = url
+        preview.style.display = 'block'
+      } else {
+        zone.classList.remove('has-file')
+        name.textContent = ''
+        preview.removeAttribute('src')
+        preview.style.display = 'none'
+      }
+    }
+
+    window.previewDni = function(input, lado) {
+      clearAlert()
+      const file = input.files[0]
+      if (!file) return
+      const zone = document.getElementById(`zone-${lado}`)
+      const name = document.getElementById(`name-${lado}`)
+      const preview = document.getElementById(`preview-${lado}`)
+      zone.classList.add('has-file')
+      name.textContent = file.name
+      const reader = new FileReader()
+      reader.onload = e => { preview.src = e.target.result; preview.style.display = 'block' }
+      reader.readAsDataURL(file)
+    }
+
+    window.guardarCbuPerfil = async function() {
+      clearAlert()
+      const camioneroId = sessionStorage.getItem('camionero_id')
+      if (!camioneroId) {
+        window.location.href = '/src/pages/login.html'
+        return
+      }
+      const raw = document.getElementById('cbu-perfil').value
+      const digits = String(raw || '').replace(/\D/g, '').slice(0, 22)
+      if (digits.length !== 0 && digits.length !== 22) {
+        showError('El CBU / CVU debe tener 22 dígitos o dejalo vacío.')
+        return
+      }
+      const btn = document.getElementById('btn-guardar-cbu')
+      btn.disabled = true
+      btn.innerHTML = '<span class="spinner"></span>Guardando...'
+      try {
+        await actualizarCbuCvuCamionero(camioneroId, digits)
+        document.getElementById('cbu-perfil').value = digits
+        showSuccess('Guardado exitosamente.')
+      } catch (e) {
+        console.error(e)
+        showError(e?.message || 'No se pudo guardar. Intentá de nuevo.')
+      } finally {
+        btn.disabled = false
+        btn.textContent = 'Guardar CBU / CVU'
+      }
+    }
+
+    window.guardarDniPerfil = async function() {
+      clearAlert()
+      const camioneroId = sessionStorage.getItem('camionero_id')
+      if (!camioneroId) {
+        window.location.href = '/src/pages/login.html'
+        return
+      }
+
+      const fileFrente = document.getElementById('file-frente').files[0]
+      const fileDorso = document.getElementById('file-dorso').files[0]
+
+      let dniFrente = storedFrenteUrl
+      let dniDorso = storedDorsoUrl
+
+      const isCloudinaryConfigured =
+        !!import.meta.env.VITE_CLOUDINARY_CLOUD_NAME &&
+        !!import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET &&
+        !String(import.meta.env.VITE_CLOUDINARY_CLOUD_NAME).includes('tu_cloud_name')
+
+      async function toDataUrl(file) {
+        return await new Promise((resolve, reject) => {
+          const r = new FileReader()
+          r.onload = () => resolve(String(r.result || ''))
+          r.onerror = () => reject(new Error('No se pudo leer la imagen.'))
+          r.readAsDataURL(file)
+        })
+      }
+
+      const btn = document.getElementById('btn-guardar-dni')
+      btn.disabled = true
+
+      try {
+        if (fileFrente) {
+          btn.innerHTML = '<span class="spinner"></span>Subiendo frente...'
+          dniFrente = isCloudinaryConfigured
+            ? await subirImagenCloudinary(fileFrente, 'dni')
+            : await toDataUrl(fileFrente)
+        }
+        if (fileDorso) {
+          btn.innerHTML = '<span class="spinner"></span>Subiendo dorso...'
+          dniDorso = isCloudinaryConfigured
+            ? await subirImagenCloudinary(fileDorso, 'dni')
+            : await toDataUrl(fileDorso)
+        }
+
+        if (!dniFrente || !dniDorso) {
+          showError('Necesitamos el frente y el dorso del DNI. Subí las que falten y guardá de nuevo.')
+          btn.disabled = false
+          btn.textContent = 'Guardar fotos del DNI'
+          return
+        }
+
+        if (!fileFrente && !fileDorso) {
+          showSuccess('Guardado exitosamente.')
+          btn.disabled = false
+          btn.textContent = 'Guardar fotos del DNI'
+          return
+        }
+
+        btn.innerHTML = '<span class="spinner"></span>Guardando...'
+        await actualizarDniFotosCamionero(camioneroId, { dni_frente_url: dniFrente, dni_dorso_url: dniDorso })
+        storedFrenteUrl = dniFrente
+        storedDorsoUrl = dniDorso
+        document.getElementById('file-frente').value = ''
+        document.getElementById('file-dorso').value = ''
+        setDniPreview('frente', dniFrente, 'Guardada en tu cuenta')
+        setDniPreview('dorso', dniDorso, 'Guardada en tu cuenta')
+        showSuccess('Guardado exitosamente.')
+      } catch (e) {
+        console.error(e)
+        showError(e?.message || 'No se pudieron guardar las fotos. Intentá de nuevo.')
+      } finally {
+        btn.disabled = false
+        btn.textContent = 'Guardar fotos del DNI'
+      }
+    }
+
+    window.goHome = () => { window.location.href = '/src/pages/home.html' }
+    window.goNuevaSolicitud = () => { window.location.href = '/src/pages/solicitud.html' }
+    window.goPerfil = () => { window.location.href = '/src/pages/perfil.html' }
+    window.goBack = () => {
+      if (history.length > 1) history.back()
+      else window.location.href = '/src/pages/home.html'
+    }
+
+    async function loadPage() {
+      const email = sessionStorage.getItem('camionero_email')
+      const camioneroId = sessionStorage.getItem('camionero_id')
+      if (!email || !camioneroId) {
+        window.location.href = '/src/pages/login.html'
+        return
+      }
+
+      try {
+        const c = await obtenerCamioneroPorEmail(email)
+        if (!c.email_verificado) {
+          showError('Tu cuenta todavía no está verificada. Revisá tu email y verificá tu cuenta.')
+          return
+        }
+        document.getElementById('p-nombre').textContent = c.nombre || '—'
+        document.getElementById('p-apellido').textContent = c.apellido || '—'
+        document.getElementById('p-dni').textContent = c.dni || '—'
+        document.getElementById('p-cuit').textContent = c.cuit || '—'
+        document.getElementById('p-email').textContent = c.email || '—'
+        document.getElementById('p-cel').textContent = c.celular || '—'
+
+        document.getElementById('cbu-perfil').value = String(c.cbu_cvu || '').replace(/\D/g, '').slice(0, 22)
+
+        storedFrenteUrl = String(c.dni_frente_url || '').trim()
+        storedDorsoUrl = String(c.dni_dorso_url || '').trim()
+        setDniPreview('frente', storedFrenteUrl, storedFrenteUrl ? 'Guardada en tu cuenta' : '')
+        setDniPreview('dorso', storedDorsoUrl, storedDorsoUrl ? 'Guardada en tu cuenta' : '')
+      } catch (e) {
+        console.error(e)
+        showError(e?.message || 'Error cargando tu perfil.')
+      }
+    }
+
+    loadPage()
+  </script>
+</body>
+</html>

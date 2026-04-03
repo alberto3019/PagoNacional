@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Confirmación — Pago Nacional</title>
+  <style>
+    .app-header {
+      background: #12122a; min-height: 60px; display: flex; align-items: center; padding: 10px 20px;
+      margin: -28px -28px 24px -28px;
+    }
+    .app-header .logo-wrap {
+      height: 48px; max-width: min(320px, calc(100vw - 48px)); display: flex; align-items: center;
+      background: transparent;
+    }
+    .app-header img { max-height: 100%; max-width: 100%; width: auto; height: auto; object-fit: contain; display: block; }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; padding: 28px; margin: 0; background:#f9f9f7; }
+    .card { max-width: 560px; border: 1px solid #e5e7eb; border-radius: 14px; padding: 18px 18px; background: #fff; }
+    .muted { color: #6b7280; line-height: 1.6; }
+    .num { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+    a { color: #4f46e5; text-decoration: none; font-weight: 600; }
+    .links { margin-top: 14px; display: flex; gap: 12px; flex-wrap: wrap; }
+  </style>
+</head>
+<body>
+  <div class="app-header"><div class="logo-wrap"><img src="/logo-pago-nacional.png?v=5" alt="Pago Nacional" width="1063" height="378" decoding="async" /></div></div>
+  <div class="card">
+    <h2>Solicitud enviada</h2>
+    <p class="muted">Tu número de solicitud es: <span class="num" id="num">—</span></p>
+    <div class="links">
+      <a href="/src/pages/home.html">Ver mis solicitudes</a>
+      <a href="/src/pages/solicitud.html">Nueva solicitud</a>
+    </div>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(location.search)
+    document.getElementById('num').textContent = params.get('num') || '—'
+  </script>
+</body>
+</html>

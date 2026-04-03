@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Verificando — Pago Nacional</title>
+  <style>
+    .app-header {
+      background: #12122a; min-height: 60px; display: flex; align-items: center; padding: 10px 20px;
+      margin: -28px -28px 24px -28px;
+    }
+    .app-header .logo-wrap {
+      height: 48px; max-width: min(320px, calc(100vw - 48px)); display: flex; align-items: center;
+      background: transparent;
+    }
+    .app-header img { max-height: 100%; max-width: 100%; width: auto; height: auto; object-fit: contain; display: block; }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; padding: 28px; margin: 0; }
+    .muted { color: #6b7280; }
+    .err { margin-top: 14px; color: #991b1b; background: #fee2e2; padding: 10px 12px; border-radius: 10px; display:none; }
+  </style>
+</head>
+<body>
+  <div class="app-header"><div class="logo-wrap"><img src="/logo-pago-nacional.png?v=5" alt="Pago Nacional" width="1063" height="378" decoding="async" /></div></div>
+  <h2>Verificando tu cuenta…</h2>
+  <div class="muted">No cierres esta pestaña.</div>
+  <div class="err" id="err"></div>
+
+  <script type="module">
+    import { verificarEmail } from '../lib/supabase.js'
+
+    const params = new URLSearchParams(window.location.search)
+    const id = params.get('id')
+    const errEl = document.getElementById('err')
+
+    async function run() {
+      try {
+        if (!id) throw new Error('Falta el parámetro "id".')
+        await verificarEmail(id)
+        window.location.href = '/src/pages/login.html'
+      } catch (e) {
+        console.error(e)
+        errEl.style.display = 'block'
+        errEl.textContent = e?.message || 'No se pudo verificar la cuenta.'
+      }
+    }
+
+    run()
+  </script>
+</body>
+</html>

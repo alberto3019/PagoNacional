@@ -1,0 +1,1206 @@
+<!-- src/pages/admin.html -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Panel Admin — Pago Nacional</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy: #12122a; --accent: #4f46e5; --text: #1a1a2e; --text-muted: #6b7280;
+      --border: #e5e7eb; --bg: #f4f4f1; --white: #ffffff;
+      --success-bg: #d1fae5; --success-text: #065f46;
+      --warning-bg: #fef3c7; --warning-text: #92400e;
+      --danger-bg: #fee2e2;  --danger-text: #991b1b;
+    }
+
+    html { overflow-x: hidden; max-width: 100%; }
+    body {
+      font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text);
+      min-height: 100vh; overflow-x: hidden; max-width: 100%; position: relative;
+    }
+
+    /* ── LOGIN ── */
+    .login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
+    .login-card { background: var(--white); border: 1px solid var(--border); border-radius: 16px; padding: 40px; width: 100%; max-width: 380px; }
+    .login-brand {
+      margin-bottom: 12px; line-height: 0; display: inline-flex; align-items: center;
+      height: 64px; max-width: 100%; background: transparent;
+    }
+    @media (min-width: 1024px) {
+      .login-brand { height: 72px; }
+    }
+    .login-brand img {
+      max-height: 100%; max-width: 100%; width: auto; height: auto;
+      object-fit: contain; object-position: left center; display: block;
+    }
+    .login-sub { font-size: 13px; color: var(--text-muted); margin-bottom: 32px; }
+    .lfield { margin-bottom: 16px; }
+    .lfield label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; }
+    .lfield input { width: 100%; padding: 11px 14px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; font-family: 'DM Sans', sans-serif; }
+    .lfield input:focus { outline: none; border-color: var(--accent); }
+    .btn-login { width: 100%; padding: 13px; background: var(--navy); color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; font-family: 'DM Sans', sans-serif; cursor: pointer; margin-top: 4px; }
+    .btn-login:hover { background: #0f0f22; }
+    .login-err { font-size: 13px; color: #991b1b; background: #fee2e2; padding: 10px 14px; border-radius: 8px; margin-bottom: 14px; display: none; }
+
+    /* ── LAYOUT ── */
+    .app {
+      display: none; flex-direction: column; min-height: 100vh;
+      width: 100%; max-width: 100vw; min-width: 0; overflow-x: hidden;
+    }
+    .topbar {
+      background: var(--navy); min-height: 60px; display: flex; align-items: center;
+      padding: 8px 20px; gap: 14px; justify-content: space-between; position: sticky; top: 0; z-index: 10;
+      width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box;
+    }
+    .topbar-brand {
+      flex: 1 1 auto; min-width: 0; max-width: calc(100% - 180px); height: 56px;
+      display: inline-flex; align-items: center; line-height: 0;
+      background: transparent; overflow: hidden;
+    }
+    @media (min-width: 1024px) {
+      .topbar-brand { height: 68px; max-width: calc(100% - 200px); }
+    }
+    @media (min-width: 1280px) {
+      .topbar-brand { height: 72px; max-width: calc(100% - 220px); }
+    }
+    .topbar-brand img {
+      max-height: 100%; max-width: 100%; width: auto; height: auto;
+      object-fit: contain; object-position: left center; display: block;
+    }
+    .topbar-right { display: flex; align-items: center; gap: 16px; flex-shrink: 0; }
+    .topbar-user { font-size: 13px; color: rgba(255,255,255,0.55); }
+    .btn-logout { padding: 7px 14px; background: transparent; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; color: rgba(255,255,255,0.7); font-size: 12px; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+    .btn-logout:hover { border-color: rgba(255,255,255,0.5); color: #fff; }
+
+    .main {
+      flex: 1; padding: 28px; margin: 0 auto; width: 100%; min-width: 0;
+      max-width: min(1400px, 100%); box-sizing: border-box;
+    }
+
+    /* ── TABS ── */
+    .tabs {
+      display: flex; gap: 2px; margin-bottom: 24px; border-bottom: 1px solid var(--border);
+      flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch;
+      width: 100%; min-width: 0; scrollbar-width: thin;
+    }
+    .tabs::-webkit-scrollbar { height: 4px; }
+    .tabs::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 2px; }
+    .tab {
+      flex: 0 0 auto; padding: 10px 18px; font-size: 14px; cursor: pointer; color: var(--text-muted);
+      border-bottom: 2px solid transparent; margin-bottom: -1px; background: none; border-top: none;
+      border-left: none; border-right: none; font-family: 'DM Sans', sans-serif; white-space: nowrap;
+    }
+    .tab.active { color: var(--navy); border-bottom-color: var(--navy); font-weight: 500; }
+
+    /* ── STATS ── */
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 24px; }
+    .stat { background: var(--white); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; }
+    .stat-label { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.7px; color: var(--text-muted); margin-bottom: 6px; }
+    .stat-value { font-size: 28px; font-weight: 500; color: var(--navy); line-height: 1; }
+    .stat-value.warn { color: #92400e; }
+    .stat-value.ok   { color: #065f46; }
+    .stat-value.err  { color: #991b1b; }
+
+    /* ── FILTERS ── */
+    .filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; align-items: center; }
+    .filters input[type=text] { flex: 2; min-width: 200px; }
+    .filters select, .filters input[type=date] { flex: 1; min-width: 130px; }
+    .filters input, .filters select {
+      padding: 9px 13px; border: 1px solid var(--border); border-radius: 8px;
+      font-size: 13px; font-family: 'DM Sans', sans-serif; color: var(--text); background: var(--white);
+    }
+    .filters input:focus, .filters select:focus { outline: none; border-color: var(--accent); }
+    .btn-export {
+      padding: 9px 16px; background: var(--white); border: 1px solid var(--border);
+      border-radius: 8px; font-size: 13px; cursor: pointer; color: var(--text);
+      font-family: 'DM Sans', sans-serif; white-space: nowrap; font-weight: 500;
+    }
+    .btn-export:hover { background: var(--bg); }
+
+    /* ── TABLE ── */
+    .table-wrap {
+      background: var(--white); border: 1px solid var(--border); border-radius: 12px;
+      overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch;
+      width: 100%; max-width: 100%; min-width: 0;
+    }
+    .tbl { width: 100%; min-width: 640px; border-collapse: collapse; font-size: 13px; }
+    .tbl th {
+      text-align: left; padding: 11px 14px;
+      background: #fafafa; border-bottom: 1px solid var(--border);
+      font-size: 11px; font-weight: 500; text-transform: uppercase;
+      letter-spacing: 0.6px; color: var(--text-muted); white-space: nowrap;
+    }
+    .tbl td { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; color: var(--text); }
+    .tbl tr:last-child td { border-bottom: none; }
+    .tbl tr:hover td { background: #fafafa; }
+    .tbl .mono { font-family: monospace; font-size: 12px; }
+
+    .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; }
+    .badge.pendiente { background: var(--warning-bg); color: var(--warning-text); }
+    .badge.aprobado  { background: var(--success-bg); color: var(--success-text); }
+    .badge.rechazado { background: var(--danger-bg);  color: var(--danger-text); }
+
+    .btn-ver { padding: 5px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; cursor: pointer; background: transparent; color: var(--text); font-family: 'DM Sans', sans-serif; }
+    .btn-ver:hover { background: var(--bg); }
+    .btn-ver.danger { color: #991b1b; border-color: #fca5a5; background: #fee2e2; }
+    .btn-ver.danger:hover { background: #fecaca; }
+
+    .empty { padding: 48px; text-align: center; color: var(--text-muted); font-size: 14px; }
+
+    /* ── MODAL ── */
+    .overlay { position: fixed; inset: 0; background: rgba(10,10,30,0.5); display: none; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
+    .overlay.open { display: flex; }
+    .modal { background: var(--white); border-radius: 16px; padding: 0; width: 100%; max-width: 520px; max-height: 90vh; overflow-y: auto; border: 1px solid var(--border); }
+    .modal-head { padding: 22px 26px 18px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: var(--white); z-index: 1; }
+    .modal-head h3 { font-size: 17px; font-weight: 500; }
+    .modal-close { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text-muted); line-height: 1; padding: 0; }
+    .modal-body { padding: 22px 26px; }
+    .modal-section { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.7px; color: var(--text-muted); margin: 18px 0 10px; }
+    .modal-section:first-child { margin-top: 0; }
+    .detail-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f3f3f0; font-size: 13px; }
+    .detail-row:last-child { border-bottom: none; }
+    .detail-label { color: var(--text-muted); }
+    .detail-val { font-weight: 500; text-align: right; }
+    .detail-val.mono { font-family: monospace; font-size: 12px; }
+    .imgs-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; margin-bottom: 22px; }
+    .img-block { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+    .img-block img {
+      width: 100%; height: 130px; object-fit: cover; display: block;
+      cursor: zoom-in;
+    }
+    .img-block img[src=""] { cursor: default; }
+    .img-label { font-size: 11px; color: var(--text-muted); padding: 6px 8px; background: #fafafa; text-align: center; }
+
+    /* Ampliar DNI (encima del modal de solicitud) */
+    .dni-zoom-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.9);
+      display: none; align-items: center; justify-content: center; z-index: 200;
+      padding: 48px 20px 20px; cursor: zoom-out;
+    }
+    .dni-zoom-overlay.open { display: flex; }
+    .dni-zoom-inner {
+      max-width: min(96vw, 1100px); max-height: 90vh; margin: 0; cursor: default;
+      text-align: center;
+    }
+    .dni-zoom-inner img {
+      max-width: 100%; max-height: calc(90vh - 40px); width: auto; height: auto;
+      object-fit: contain; display: block; margin: 0 auto; border-radius: 8px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+    }
+    .dni-zoom-caption { color: #d1d5db; font-size: 13px; margin-top: 12px; }
+    .dni-zoom-close {
+      position: fixed; top: 12px; right: 16px; z-index: 210;
+      width: 44px; height: 44px; border: none; border-radius: 10px;
+      background: rgba(255,255,255,0.12); color: #fff; font-size: 28px;
+      line-height: 1; cursor: pointer; font-family: inherit;
+    }
+    .dni-zoom-close:hover { background: rgba(255,255,255,0.22); }
+    .modal-actions { display: flex; gap: 8px; padding: 18px 26px; border-top: 1px solid var(--border); }
+    .modal-actions button { flex: 1; padding: 11px; border-radius: 8px; font-size: 13px; cursor: pointer; font-family: 'DM Sans', sans-serif; font-weight: 500; border: 1px solid var(--border); background: transparent; }
+    .cam-tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .cam-tbl th {
+      text-align: left; padding: 10px 12px;
+      background: #fafafa; border-bottom: 1px solid var(--border);
+      font-size: 11px; font-weight: 500; text-transform: uppercase;
+      letter-spacing: 0.6px; color: var(--text-muted); white-space: nowrap;
+    }
+    .cam-tbl td { padding: 11px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; color: var(--text); }
+    .cam-tbl tr:last-child td { border-bottom: none; }
+    .cam-empty { padding: 14px 12px; color: var(--text-muted); font-size: 13px; border: 1px dashed var(--border); border-radius: 10px; background: #fafafa; }
+    .cam-tools { margin-top: 12px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .cam-search {
+      flex: 1;
+      min-width: 220px;
+      padding: 9px 13px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 13px;
+      font-family: 'DM Sans', sans-serif;
+      background: #fff;
+      color: var(--text);
+    }
+    .cam-search:focus { outline: none; border-color: var(--accent); }
+    .cam-scroll {
+      max-height: 240px;
+      overflow: auto;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+    .modal-form { display: grid; gap: 12px; }
+    .modal-form label { display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
+    .modal-form input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 13px;
+      font-family: 'DM Sans', sans-serif;
+      color: var(--text);
+      background: var(--white);
+    }
+    .modal-form input:focus { outline: none; border-color: var(--accent); }
+    .cuenta-req { color: var(--danger-text); font-weight: 600; margin-left: 2px; }
+    .cuenta-form-hint { font-size: 12px; color: var(--text-muted); line-height: 1.45; margin-bottom: 12px; }
+    /* Más aire entre fotos DNI y "Solicitudes del camionero" */
+    #modal-camionero-solicitudes .modal-section { margin-top: 28px; }
+    .btn-approve { background: var(--success-bg) !important; color: var(--success-text) !important; border-color: #a7f3d0 !important; }
+    .btn-reject  { background: var(--danger-bg)  !important; color: var(--danger-text)  !important; border-color: #fca5a5 !important; }
+
+    .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; margin-right: 6px; vertical-align: middle; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @media (max-width: 640px) {
+      .main { padding: 12px 12px 20px; }
+      .topbar { padding: 8px 12px; gap: 8px; }
+      .topbar-brand { height: 44px; max-width: calc(100% - 128px); }
+      .topbar-user { display: none; }
+      .btn-logout { padding: 8px 10px; font-size: 11px; white-space: nowrap; }
+
+      .stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+      }
+      .stat { padding: 12px 12px; min-width: 0; }
+      .stat-value { font-size: 22px; }
+      .stat-label { font-size: 10px; }
+
+      .filters {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+      }
+      .filters input[type=text],
+      .filters select,
+      .filters input[type=date] {
+        flex: none !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100%;
+      }
+      .btn-export { width: 100%; text-align: center; }
+
+      .tab { padding: 10px 12px; font-size: 13px; }
+
+      .tbl { min-width: 520px; font-size: 12px; }
+      .tbl th, .tbl td { padding: 9px 10px; }
+      .tbl th:nth-child(3), .tbl td:nth-child(3),
+      .tbl th:nth-child(4), .tbl td:nth-child(4),
+      .tbl th:nth-child(6), .tbl td:nth-child(6) { display: none; }
+
+      .modal { max-width: 100%; margin: 0 auto; }
+      .modal-actions { flex-wrap: wrap; }
+      .modal-actions button { min-width: calc(50% - 4px); flex: 1 1 auto; }
+      .imgs-row { grid-template-columns: 1fr; }
+      .cam-search { min-width: 0; width: 100%; max-width: 100%; }
+      .detail-row {
+        flex-wrap: wrap; gap: 6px 0;
+        align-items: flex-start;
+      }
+      .detail-val { text-align: left; max-width: 100%; word-break: break-word; }
+    }
+
+    @media (max-width: 400px) {
+      .modal-actions { flex-direction: column; }
+      .modal-actions button { width: 100%; min-width: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-wrap" id="login-view">
+  <div class="login-card">
+    <div class="login-brand"><img src="/logo-pago-nacional.png?v=5" alt="Pago Nacional" width="1063" height="378" decoding="async" /></div>
+    <div class="login-sub">Panel de administracion</div>
+    <div class="login-err" id="login-err">Usuario o contrasena incorrectos.</div>
+    <div class="lfield">
+      <label>Usuario</label>
+      <input type="text" id="l-user" placeholder="admin" autocomplete="username" />
+    </div>
+    <div class="lfield">
+      <label>Contrasena</label>
+      <input type="password" id="l-pass" placeholder="••••••••" autocomplete="current-password"
+             onkeydown="if(event.key==='Enter')doLogin()" />
+    </div>
+    <button class="btn-login" onclick="doLogin()">Ingresar</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="app" id="app-view">
+  <div class="topbar">
+    <span class="topbar-brand"><img src="/logo-pago-nacional.png?v=5" alt="Pago Nacional" width="1063" height="378" decoding="async" /></span>
+    <div class="topbar-right">
+      <span class="topbar-user">admin</span>
+      <button class="btn-logout" onclick="doLogout()">Cerrar sesion</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="tabs">
+      <button class="tab active" onclick="setTab('solicitudes',this)">Solicitudes</button>
+      <button class="tab" onclick="setTab('camioneros',this)">Camioneros</button>
+      <button class="tab" onclick="setTab('cuentas',this)">Cuentas</button>
+      <button class="tab" onclick="setTab('terminos',this)">Términos</button>
+    </div>
+
+    <!-- TAB SOLICITUDES -->
+    <div id="tab-solicitudes">
+      <div class="stats" id="stats-row">
+        <div class="stat"><div class="stat-label">Total</div><div class="stat-value" id="s-total">--</div></div>
+        <div class="stat"><div class="stat-label">Pendientes</div><div class="stat-value warn" id="s-pend">--</div></div>
+        <div class="stat"><div class="stat-label">Aprobadas</div><div class="stat-value ok" id="s-apro">--</div></div>
+        <div class="stat"><div class="stat-label">Rechazadas</div><div class="stat-value err" id="s-rech">--</div></div>
+        <div class="stat"><div class="stat-label">Monto total (todas)</div><div class="stat-value" id="s-monto" style="font-size:20px">--</div></div>
+        <div class="stat"><div class="stat-label">Monto aprobado</div><div class="stat-value ok" id="s-monto-apro" style="font-size:20px">--</div></div>
+      </div>
+
+      <div class="filters">
+        <input type="text" id="f-busqueda" placeholder="Buscar por nombre, DNI, N° solicitud, N° echeq..." oninput="cargarSolicitudes()" />
+        <select id="f-estado" onchange="cargarSolicitudes()">
+          <option value="">Todos los estados</option>
+          <option value="pendiente">Pendiente</option>
+          <option value="aprobado">Aprobado</option>
+          <option value="rechazado">Rechazado</option>
+        </select>
+        <input type="date" id="f-desde" onchange="cargarSolicitudes()" />
+        <input type="date" id="f-hasta" onchange="cargarSolicitudes()" />
+        <button class="btn-export" onclick="exportar()">Exportar Excel</button>
+      </div>
+
+      <div class="table-wrap">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th>N° Solicitud</th>
+              <th>N° Echeq</th>
+              <th>Camionero</th>
+              <th>DNI</th>
+              <th>Monto</th>
+              <th>Banco</th>
+              <th>Cuenta asignada</th>
+              <th>Vencimiento</th>
+              <th>Estado</th>
+              <th>Fecha</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="tbody-solicitudes">
+            <tr><td colspan="11" class="empty">Cargando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TAB CAMIONEROS -->
+    <div id="tab-camioneros" style="display:none">
+      <div class="filters">
+        <input type="text" id="f-cam-busqueda" placeholder="Buscar por nombre, DNI, email..." oninput="cargarCamioneros()" />
+        <button class="btn-export" onclick="exportarCam()">Exportar Excel</button>
+      </div>
+      <div class="table-wrap">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Apellido</th>
+              <th>DNI</th>
+              <th>CUIT</th>
+              <th>Email</th>
+              <th>Celular</th>
+              <th>Email verificado</th>
+              <th>Registro</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="tbody-camioneros">
+            <tr><td colspan="9" class="empty">Cargando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TAB CUENTAS -->
+    <div id="tab-cuentas" style="display:none">
+      <div class="card" style="background:var(--white); border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:12px;">
+        <form id="form-nueva-cuenta" onsubmit="event.preventDefault(); crearCuenta();">
+          <p class="cuenta-form-hint">Todos los campos son obligatorios. Tenés que cargar <strong>CBU</strong> o <strong>CVU</strong> (al menos uno; pueden ser los dos).</p>
+          <div class="filters" style="margin-bottom:0;">
+            <input type="text" id="cta-titular" name="titular" placeholder="Titular" required autocomplete="name" />
+            <input type="text" id="cta-alias" name="alias" placeholder="Alias" required autocomplete="off" />
+            <input type="text" id="cta-cbu" name="cbu" placeholder="CBU (22 dígitos)" maxlength="22" inputmode="numeric" autocomplete="off" />
+            <input type="text" id="cta-cvu" name="cvu" placeholder="CVU (22 dígitos)" maxlength="22" inputmode="numeric" autocomplete="off" />
+            <input type="text" id="cta-banco" name="banco" placeholder="Banco" required autocomplete="organization" />
+            <button type="submit" class="btn-export">Agregar cuenta</button>
+          </div>
+        </form>
+      </div>
+      <div class="table-wrap">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th>Titular</th>
+              <th>Alias</th>
+              <th>CBU/CVU</th>
+              <th>Banco</th>
+              <th>Alta</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="tbody-cuentas">
+            <tr><td colspan="6" class="empty">Cargando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TAB TÉRMINOS (datos legales para T&C y contratos) -->
+    <div id="tab-terminos" style="display:none">
+      <div class="table-wrap" style="padding:22px 26px;">
+        <p style="font-size:14px;color:var(--text-muted);margin:0 0 18px;line-height:1.55;">
+          Esta información rellena los datos de la empresa en los Términos y Condiciones.
+        </p>
+        <div class="modal-form" style="max-width:560px;">
+          <div>
+            <label for="tc-razon">Razón social / nombre del prestamista</label>
+            <input id="tc-razon" type="text" autocomplete="organization" placeholder="Ej. Mi Empresa S.A." />
+          </div>
+          <div>
+            <label for="tc-cuit">CUIT</label>
+            <input id="tc-cuit" type="text" inputmode="numeric" autocomplete="off" placeholder="00-00000000-0" />
+          </div>
+          <div>
+            <label for="tc-dom">Domicilio legal</label>
+            <input id="tc-dom" type="text" autocomplete="street-address" placeholder="Calle, ciudad, código postal" />
+          </div>
+          <div>
+            <label for="tc-email">Email de contacto (opcional)</label>
+            <input id="tc-email" type="email" autocomplete="email" placeholder="legal@empresa.com" />
+          </div>
+          <div>
+            <label for="tc-tel">Teléfono (opcional)</label>
+            <input id="tc-tel" type="tel" autocomplete="tel" placeholder="" />
+          </div>
+        </div>
+        <div style="margin-top:18px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+          <button type="button" class="btn-export" onclick="guardarTerminosEmpresaAdmin()"
+            style="background:var(--navy);color:#fff;border-color:var(--navy);font-weight:500;">
+            Guardar datos
+          </button>
+          <span id="tc-msg" style="font-size:13px;color:var(--success-text);display:none;">Guardado correctamente.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DETALLE -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="m-titulo">Detalle de solicitud</h3>
+      <button class="modal-close" onclick="closeModal()">x</button>
+    </div>
+    <div class="modal-body">
+      <div id="modal-solicitud">
+        <div class="modal-section">Datos del echeq</div>
+        <div class="detail-row"><span class="detail-label">N° solicitud</span><span class="detail-val mono" id="m-num"></span></div>
+        <div class="detail-row"><span class="detail-label">N° echeq</span><span class="detail-val mono" id="m-echeq"></span></div>
+        <div class="detail-row"><span class="detail-label">Monto</span><span class="detail-val" id="m-monto"></span></div>
+        <div class="detail-row"><span class="detail-label">Banco emisor</span><span class="detail-val" id="m-banco"></span></div>
+        <div class="detail-row"><span class="detail-label">Vencimiento</span><span class="detail-val" id="m-vto"></span></div>
+        <div class="detail-row"><span class="detail-label">CBU/CVU</span><span class="detail-val mono" id="m-cbu" style="font-size:11px"></span></div>
+        <div class="detail-row"><span class="detail-label">Estado</span><span class="detail-val" id="m-estado"></span></div>
+        <div class="detail-row"><span class="detail-label">Fecha de solicitud</span><span class="detail-val" id="m-fecha"></span></div>
+        <div class="detail-row" id="m-row-cuenta" style="display:none;">
+          <span class="detail-label">Cuenta asignada</span>
+          <span class="detail-val" id="m-cuenta"></span>
+        </div>
+        <div id="m-aprobacion-wrap" style="display:none; margin-top:10px;">
+          <div class="modal-section" style="margin-top:10px;">Aprobación</div>
+          <select id="m-cuenta-select" style="width:100%; padding:9px 12px; border:1px solid var(--border); border-radius:8px; font-size:13px; font-family:'DM Sans',sans-serif;">
+            <option value="">Seleccionar cuenta destino...</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="modal-section">Datos del camionero</div>
+      <div class="detail-row"><span class="detail-label">Nombre</span><span class="detail-val" id="m-nombre"></span></div>
+      <div class="detail-row"><span class="detail-label">DNI</span><span class="detail-val mono" id="m-dni"></span></div>
+      <div class="detail-row"><span class="detail-label">CUIT</span><span class="detail-val mono" id="m-cuit"></span></div>
+      <div class="detail-row"><span class="detail-label">Email</span><span class="detail-val" id="m-email"></span></div>
+      <div class="detail-row"><span class="detail-label">Celular</span><span class="detail-val" id="m-celular"></span></div>
+
+      <div class="modal-section">Documentacion</div>
+      <div class="imgs-row">
+        <div class="img-block">
+          <img id="m-img-frente" src="" alt="DNI — frente" title="Tocá para ampliar"
+            onclick="abrirZoomDni(this)" onerror="this.style.display='none'" />
+          <div class="img-label">DNI — frente · ampliar</div>
+        </div>
+        <div class="img-block">
+          <img id="m-img-dorso" src="" alt="DNI — dorso" title="Tocá para ampliar"
+            onclick="abrirZoomDni(this)" onerror="this.style.display='none'" />
+          <div class="img-label">DNI — dorso · ampliar</div>
+        </div>
+      </div>
+
+      <div id="modal-camionero-solicitudes" style="display:none;">
+        <div class="modal-section">Solicitudes del camionero</div>
+        <div class="cam-tools">
+          <input
+            id="cam-solicitudes-q"
+            class="cam-search"
+            type="text"
+            placeholder="Buscar por N° solicitud, N° echeq, estado..."
+            oninput="filtrarSolicitudesCamionero()"
+          />
+        </div>
+        <div id="cam-solicitudes-empty" class="cam-empty" style="display:none;">No hay solicitudes.</div>
+        <div class="cam-scroll">
+          <table class="cam-tbl">
+            <thead>
+              <tr>
+                <th>N° solicitud</th>
+                <th>N° echeq</th>
+                <th>Estado</th>
+                <th>Fecha</th>
+                <th>Monto</th>
+              </tr>
+            </thead>
+            <tbody id="cam-solicitudes-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button onclick="closeModal()">Cerrar</button>
+      <button class="btn-approve" id="btn-aprobar" onclick="cambiarEstado('aprobado')">Aprobar</button>
+      <button class="btn-reject"  id="btn-rechazar" onclick="cambiarEstado('rechazado')">Rechazar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Vista ampliada DNI (clic en miniaturas del modal) -->
+<div class="dni-zoom-overlay" id="dni-zoom-overlay" onclick="if(event.target===this)cerrarZoomDni()">
+  <button type="button" class="dni-zoom-close" onclick="cerrarZoomDni()" aria-label="Cerrar vista ampliada">×</button>
+  <figure class="dni-zoom-inner" onclick="event.stopPropagation()">
+    <img id="dni-zoom-img" src="" alt="" />
+    <figcaption class="dni-zoom-caption" id="dni-zoom-caption"></figcaption>
+  </figure>
+</div>
+
+<!-- MODAL EDICION CUENTA -->
+<div class="overlay" id="overlay-cuenta">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-head">
+      <h3 id="cuenta-modal-title">Editar cuenta</h3>
+      <button class="modal-close" onclick="cerrarModalCuenta()">x</button>
+    </div>
+    <form id="form-edit-cuenta" onsubmit="event.preventDefault(); guardarEdicionCuenta();">
+      <div class="modal-body">
+        <div class="modal-form">
+          <p class="cuenta-form-hint" style="margin-bottom:4px;">Titular, alias y banco obligatorios. CBU o CVU: al menos uno.</p>
+          <div>
+            <label for="edit-cuenta-titular">Titular<span class="cuenta-req">*</span></label>
+            <input id="edit-cuenta-titular" type="text" required autocomplete="name" />
+          </div>
+          <div>
+            <label for="edit-cuenta-alias">Alias<span class="cuenta-req">*</span></label>
+            <input id="edit-cuenta-alias" type="text" required autocomplete="off" />
+          </div>
+          <div>
+            <label for="edit-cuenta-cbu">CBU (22 dígitos)</label>
+            <input id="edit-cuenta-cbu" type="text" maxlength="22" inputmode="numeric" autocomplete="off" />
+          </div>
+          <div>
+            <label for="edit-cuenta-cvu">CVU (22 dígitos)</label>
+            <input id="edit-cuenta-cvu" type="text" maxlength="22" inputmode="numeric" autocomplete="off" />
+          </div>
+          <div>
+            <label for="edit-cuenta-banco">Banco<span class="cuenta-req">*</span></label>
+            <input id="edit-cuenta-banco" type="text" required autocomplete="organization" />
+          </div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" onclick="cerrarModalCuenta()">Cancelar</button>
+        <button type="submit" class="btn-approve">Guardar cambios</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script type="module">
+  import {
+    listarSolicitudes, listarCamioneros, actualizarEstado, obtenerStats, obtenerSolicitudesDeCamionero,
+    listarCuentasDestino, crearCuentaDestino, actualizarCuentaDestino, eliminarCuentaDestino, aprobarSolicitudConCuenta
+  } from '../lib/supabase.js'
+  import { exportarSolicitudes, exportarCamioneros } from '../lib/exportExcel.js'
+  import { enviarAprobacionConCuenta } from '../lib/emails.js'
+  import { obtenerTerminosEmpresaParaFormulario, guardarTerminosEmpresa } from '../lib/terminosEmpresa.js'
+
+  const ADMIN_USER = import.meta.env.VITE_ADMIN_USER || 'admin'
+  const ADMIN_PASS = import.meta.env.VITE_ADMIN_PASS || '123456'
+
+  let solicitudesCache = []
+  let camioneroCache   = []
+  let cuentasCache     = []
+  let cuentaEditandoId = null
+  let modalSolicitudId = null
+  let camSolicitudesCache = []
+
+  // ── AUTH ──────────────────────────────────────────────────────
+  // El admin entra por el login general (/src/pages/login.html).
+  // Si no hay sesión admin, redirigimos a ese login.
+  if (sessionStorage.getItem('admin_auth') !== '1') {
+    window.location.href = '/src/pages/login.html'
+  }
+
+  window.doLogin = function() {
+    const user = document.getElementById('l-user').value.trim()
+    const pass = document.getElementById('l-pass').value
+    if (user === ADMIN_USER && pass === ADMIN_PASS) {
+      sessionStorage.setItem('admin_auth', '1')
+      document.getElementById('login-view').style.display = 'none'
+      document.getElementById('app-view').style.display = 'flex'
+      cargarTodo()
+    } else {
+      document.getElementById('login-err').style.display = 'block'
+    }
+  }
+
+  window.doLogout = function() {
+    sessionStorage.removeItem('admin_auth')
+    window.location.href = '/src/pages/login.html'
+  }
+
+  if (sessionStorage.getItem('admin_auth') === '1') {
+    document.getElementById('login-view').style.display = 'none'
+    document.getElementById('app-view').style.display = 'flex'
+    cargarTodo()
+  }
+
+  // ── TABS ──────────────────────────────────────────────────────
+  window.setTab = function(name, el) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'))
+    el.classList.add('active')
+    document.getElementById('tab-solicitudes').style.display = name === 'solicitudes' ? 'block' : 'none'
+    document.getElementById('tab-camioneros').style.display  = name === 'camioneros'  ? 'block' : 'none'
+    document.getElementById('tab-cuentas').style.display     = name === 'cuentas' ? 'block' : 'none'
+    document.getElementById('tab-terminos').style.display    = name === 'terminos' ? 'block' : 'none'
+    if (name === 'camioneros') cargarCamioneros()
+    if (name === 'cuentas') cargarCuentas()
+    if (name === 'terminos') cargarTerminosEmpresaForm()
+  }
+
+  window.cargarTerminosEmpresaForm = function() {
+    const d = obtenerTerminosEmpresaParaFormulario()
+    document.getElementById('tc-razon').value = d.razon_social
+    document.getElementById('tc-cuit').value = d.cuit
+    document.getElementById('tc-dom').value = d.domicilio
+    document.getElementById('tc-email').value = d.email_legal
+    document.getElementById('tc-tel').value = d.telefono
+    document.getElementById('tc-msg').style.display = 'none'
+  }
+
+  window.guardarTerminosEmpresaAdmin = function() {
+    guardarTerminosEmpresa({
+      razon_social: document.getElementById('tc-razon').value,
+      cuit: document.getElementById('tc-cuit').value,
+      domicilio: document.getElementById('tc-dom').value,
+      email_legal: document.getElementById('tc-email').value,
+      telefono: document.getElementById('tc-tel').value,
+    })
+    const m = document.getElementById('tc-msg')
+    m.style.display = 'inline'
+    setTimeout(() => { m.style.display = 'none' }, 4000)
+  }
+
+  // ── CARGAR TODO ───────────────────────────────────────────────
+  async function cargarTodo() {
+    await Promise.all([ cargarStats(), cargarSolicitudes(), cargarCuentas() ])
+  }
+
+  async function cargarStats() {
+    try {
+      const s = await obtenerStats()
+      document.getElementById('s-total').textContent = s.total
+      document.getElementById('s-pend').textContent  = s.pendiente
+      document.getElementById('s-apro').textContent  = s.aprobado
+      document.getElementById('s-rech').textContent  = s.rechazado
+      document.getElementById('s-monto').textContent =
+        '$' + Number(s.monto_total || 0).toLocaleString('es-AR', { maximumFractionDigits: 0 })
+      document.getElementById('s-monto-apro').textContent =
+        '$' + Number(s.monto_aprobado || 0).toLocaleString('es-AR', { maximumFractionDigits: 0 })
+    } catch(e) { console.error(e) }
+  }
+
+  async function cargarSolicitudes() {
+    const busqueda = document.getElementById('f-busqueda').value
+    const estado   = document.getElementById('f-estado').value
+    const desde    = document.getElementById('f-desde').value
+    const hasta    = document.getElementById('f-hasta').value
+
+    document.getElementById('tbody-solicitudes').innerHTML =
+      '<tr><td colspan="10" class="empty">Cargando...</td></tr>'
+
+    try {
+      const data = await listarSolicitudes({ busqueda, estado, desde, hasta })
+      solicitudesCache = data
+
+      // Filtro adicional por nombre/apellido en cliente
+      const q = busqueda.toLowerCase()
+      const filtered = q
+        ? data.filter(s =>
+            (s.camioneros?.nombre + ' ' + s.camioneros?.apellido).toLowerCase().includes(q) ||
+            s.camioneros?.dni?.includes(q) ||
+            String(s.numero || '').toLowerCase().includes(q) ||
+            String(s.numero_echeq || '').includes(q)
+          )
+        : data
+
+      renderSolicitudes(filtered)
+    } catch(e) {
+      document.getElementById('tbody-solicitudes').innerHTML =
+        `<tr><td colspan="10" class="empty">Error cargando datos: ${e.message}</td></tr>`
+    }
+  }
+
+  // Exponer para handlers HTML (oninput/onchange)
+  window.cargarSolicitudes = cargarSolicitudes
+
+  function renderSolicitudes(rows) {
+    const tb = document.getElementById('tbody-solicitudes')
+    if (!rows.length) {
+      tb.innerHTML = '<tr><td colspan="11" class="empty">No se encontraron solicitudes.</td></tr>'
+      return
+    }
+    try {
+      tb.innerHTML = rows.map((s, i) => {
+        const cam = s.camioneros || {}
+        const estado = s.estado || 'pendiente'
+        const cls = estado === 'pendiente' ? 'pendiente' : estado === 'aprobado' ? 'aprobado' : 'rechazado'
+        const fecha = s.created_at ? new Date(s.created_at).toLocaleDateString('es-AR') : ''
+        const numero = s.numero || ''
+        const echeq = s.numero_echeq || ''
+        const banco = s.banco_emisor || ''
+        const cuentaAsignada = s.cuenta_destino_alias || s.cuenta_destino_cvu || '-'
+        const vto = s.fecha_vencimiento || ''
+        const monto = Number(s.monto || 0).toLocaleString('es-AR')
+        const estadoLabel = estado.charAt(0).toUpperCase() + estado.slice(1)
+        return `
+          <tr>
+            <td class="mono" style="font-size:12px">${numero}</td>
+            <td class="mono">${echeq}</td>
+            <td>${cam.nombre || ''} ${cam.apellido || ''}</td>
+            <td class="mono">${cam.dni || ''}</td>
+            <td>$${monto}</td>
+            <td>${banco}</td>
+            <td class="mono">${cuentaAsignada}</td>
+            <td>${vto}</td>
+            <td><span class="badge ${cls}">${estadoLabel}</span></td>
+            <td>${fecha}</td>
+            <td style="white-space:nowrap">
+              <button class="btn-ver" onclick="openModal(${i})">Ver</button>
+              <button class="btn-ver" style="margin-left:6px" onclick="openTerminos(${i})">T&amp;C</button>
+            </td>
+          </tr>`
+      }).join('')
+    } catch (e) {
+      console.error(e)
+      tb.innerHTML = `<tr><td colspan="11" class="empty">Error renderizando solicitudes: ${e.message}</td></tr>`
+    }
+  }
+
+  window.openTerminos = function(i) {
+    const s = solicitudesCache[i]
+    if (!s?.terminos_html) {
+      alert('Esta solicitud no tiene Términos y Condiciones guardados (solo se guarda en modo local por ahora).')
+      return
+    }
+    const w = window.open('', '_blank')
+    if (!w) return
+    w.document.open()
+    w.document.write(s.terminos_html)
+    w.document.close()
+  }
+
+  // ── MODAL ──────────────────────────────────────────────────────
+  window.abrirZoomDni = function(img) {
+    if (!img || !img.getAttribute('src') || img.style.display === 'none') return
+    const src = img.currentSrc || img.src
+    if (!src) return
+    document.getElementById('dni-zoom-img').src = src
+    document.getElementById('dni-zoom-img').alt = img.alt || ''
+    document.getElementById('dni-zoom-caption').textContent = img.alt || ''
+    document.getElementById('dni-zoom-overlay').classList.add('open')
+    document.body.style.overflow = 'hidden'
+  }
+
+  window.cerrarZoomDni = function() {
+    document.getElementById('dni-zoom-overlay').classList.remove('open')
+    const big = document.getElementById('dni-zoom-img')
+    big.removeAttribute('src')
+    document.body.style.overflow = ''
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return
+    const z = document.getElementById('dni-zoom-overlay')
+    if (z?.classList.contains('open')) cerrarZoomDni()
+  })
+
+  window.openModal = function(i) {
+    cerrarZoomDni()
+    const s   = solicitudesCache[i]
+    const cam = s.camioneros || {}
+    modalSolicitudId = s.id
+
+    document.getElementById('modal-solicitud').style.display = 'block'
+    document.getElementById('modal-camionero-solicitudes').style.display = 'none'
+
+    document.getElementById('m-titulo').textContent  = `Solicitud ${s.numero}`
+    document.getElementById('m-num').textContent     = s.numero
+    document.getElementById('m-echeq').textContent   = s.numero_echeq
+    document.getElementById('m-monto').textContent   = '$' + Number(s.monto).toLocaleString('es-AR')
+    document.getElementById('m-banco').textContent   = s.banco_emisor
+    document.getElementById('m-vto').textContent     = s.fecha_vencimiento
+    document.getElementById('m-cbu').textContent     = s.cbu_cvu
+    document.getElementById('m-fecha').textContent   = new Date(s.created_at).toLocaleString('es-AR')
+    document.getElementById('m-nombre').textContent  = `${cam.nombre || ''} ${cam.apellido || ''}`
+    document.getElementById('m-dni').textContent     = cam.dni || ''
+    document.getElementById('m-cuit').textContent    = cam.cuit || ''
+    document.getElementById('m-email').textContent   = cam.email || ''
+    document.getElementById('m-celular').textContent = cam.celular || ''
+
+    const cls = s.estado === 'pendiente' ? 'pendiente' : s.estado === 'aprobado' ? 'aprobado' : 'rechazado'
+    document.getElementById('m-estado').innerHTML =
+      `<span class="badge ${cls}">${s.estado.charAt(0).toUpperCase()+s.estado.slice(1)}</span>`
+
+    const fImg = document.getElementById('m-img-frente')
+    const dImg = document.getElementById('m-img-dorso')
+    fImg.src = s.dni_frente_url || ''
+    fImg.style.display = s.dni_frente_url ? 'block' : 'none'
+    fImg.title = s.dni_frente_url ? 'Tocá para ampliar' : ''
+    dImg.src = s.dni_dorso_url || ''
+    dImg.style.display = s.dni_dorso_url ? 'block' : 'none'
+    dImg.title = s.dni_dorso_url ? 'Tocá para ampliar' : ''
+
+    const isPendiente = s.estado === 'pendiente'
+    document.getElementById('btn-aprobar').style.display  = isPendiente ? 'block' : 'none'
+    document.getElementById('btn-rechazar').style.display = isPendiente ? 'block' : 'none'
+    document.getElementById('m-aprobacion-wrap').style.display = isPendiente ? 'block' : 'none'
+
+    const cuentaRow = document.getElementById('m-row-cuenta')
+    const cuentaLbl = document.getElementById('m-cuenta')
+    if (s.cuenta_destino_alias || s.cuenta_destino_cvu || s.cuenta_destino_titular) {
+      cuentaRow.style.display = 'flex'
+      cuentaLbl.textContent = `${s.cuenta_destino_alias || '-'} · ${s.cuenta_destino_cvu || '-'}`
+    } else {
+      cuentaRow.style.display = 'none'
+      cuentaLbl.textContent = ''
+    }
+
+    const sel = document.getElementById('m-cuenta-select')
+    sel.innerHTML = '<option value="">Seleccionar cuenta destino...</option>' +
+      cuentasCache.map(c => `<option value="${c.id}">${c.alias} · ${c.titular} · ${c.cvu || c.cbu || ''}</option>`).join('')
+
+    document.getElementById('overlay').classList.add('open')
+  }
+
+  window.closeModal = function() {
+    cerrarZoomDni()
+    document.getElementById('overlay').classList.remove('open')
+    modalSolicitudId = null
+  }
+
+  window.cambiarEstado = async function(estado) {
+    if (!modalSolicitudId) return
+    try {
+      if (estado === 'aprobado') {
+        const sel = document.getElementById('m-cuenta-select')
+        const cuenta = cuentasCache.find(c => c.id === sel.value)
+        if (!cuenta) {
+          alert('Seleccioná una cuenta para aprobar la solicitud.')
+          return
+        }
+        const updated = await aprobarSolicitudConCuenta(modalSolicitudId, cuenta)
+        const row = solicitudesCache.find(s => s.id === modalSolicitudId)
+        const cam = row?.camioneros || {}
+        await Promise.allSettled([
+          enviarAprobacionConCuenta(cam.email, `${cam.nombre || ''} ${cam.apellido || ''}`.trim(), updated || row || {}, cuenta)
+        ])
+      } else {
+        await actualizarEstado(modalSolicitudId, estado)
+      }
+      closeModal()
+      await Promise.all([ cargarStats(), cargarSolicitudes() ])
+    } catch(e) {
+      alert('Error al actualizar el estado: ' + e.message)
+    }
+  }
+
+  async function cargarCuentas() {
+    const tb = document.getElementById('tbody-cuentas')
+    tb.innerHTML = '<tr><td colspan="6" class="empty">Cargando...</td></tr>'
+    try {
+      const data = await listarCuentasDestino()
+      cuentasCache = data
+      if (!data.length) {
+        tb.innerHTML = '<tr><td colspan="6" class="empty">No hay cuentas cargadas.</td></tr>'
+        return
+      }
+      tb.innerHTML = data.map((c, i) => `
+        <tr>
+          <td>${c.titular || ''}</td>
+          <td class="mono">${c.alias || ''}</td>
+          <td class="mono">${c.cvu || c.cbu || ''}</td>
+          <td>${c.banco || ''}</td>
+          <td>${c.created_at ? new Date(c.created_at).toLocaleDateString('es-AR') : ''}</td>
+          <td style="white-space:nowrap">
+            <button class="btn-ver" onclick="editarCuenta(${i})">Editar</button>
+            <button class="btn-ver danger" style="margin-left:6px" onclick="borrarCuenta(${i})">Eliminar</button>
+          </td>
+        </tr>
+      `).join('')
+    } catch (e) {
+      tb.innerHTML = `<tr><td colspan="6" class="empty">Error: ${e.message}</td></tr>`
+    }
+  }
+
+  window.crearCuenta = async function() {
+    const formNueva = document.getElementById('form-nueva-cuenta')
+    if (formNueva && !formNueva.checkValidity()) {
+      formNueva.reportValidity()
+      return
+    }
+    const titular = document.getElementById('cta-titular').value.trim()
+    const alias = document.getElementById('cta-alias').value.trim()
+    const cbu = document.getElementById('cta-cbu').value.trim()
+    const cvu = document.getElementById('cta-cvu').value.trim()
+    const banco = document.getElementById('cta-banco').value.trim()
+    try {
+      await crearCuentaDestino({ titular, alias, cbu, cvu, banco })
+      document.getElementById('cta-titular').value = ''
+      document.getElementById('cta-alias').value = ''
+      document.getElementById('cta-cbu').value = ''
+      document.getElementById('cta-cvu').value = ''
+      document.getElementById('cta-banco').value = ''
+      await cargarCuentas()
+      alert('Cuenta creada correctamente.')
+    } catch (e) {
+      alert('Error al crear cuenta: ' + e.message)
+    }
+  }
+
+  window.editarCuenta = async function(i) {
+    const c = cuentasCache[i]
+    if (!c) return
+    cuentaEditandoId = c.id
+    document.getElementById('edit-cuenta-titular').value = c.titular || ''
+    document.getElementById('edit-cuenta-alias').value = c.alias || ''
+    document.getElementById('edit-cuenta-cbu').value = c.cbu || ''
+    document.getElementById('edit-cuenta-cvu').value = c.cvu || ''
+    document.getElementById('edit-cuenta-banco').value = c.banco || ''
+    document.getElementById('overlay-cuenta').classList.add('open')
+  }
+
+  window.cerrarModalCuenta = function() {
+    cuentaEditandoId = null
+    document.getElementById('overlay-cuenta').classList.remove('open')
+  }
+
+  window.guardarEdicionCuenta = async function() {
+    if (!cuentaEditandoId) return
+    const formEdit = document.getElementById('form-edit-cuenta')
+    if (formEdit && !formEdit.checkValidity()) {
+      formEdit.reportValidity()
+      return
+    }
+    const titular = document.getElementById('edit-cuenta-titular').value.trim()
+    const alias = document.getElementById('edit-cuenta-alias').value.trim()
+    const cbu = document.getElementById('edit-cuenta-cbu').value.trim()
+    const cvu = document.getElementById('edit-cuenta-cvu').value.trim()
+    const banco = document.getElementById('edit-cuenta-banco').value.trim()
+    try {
+      await actualizarCuentaDestino(cuentaEditandoId, { titular, alias, cbu, cvu, banco })
+      await cargarCuentas()
+      cerrarModalCuenta()
+      alert('Cuenta actualizada.')
+    } catch (e) {
+      alert('Error al actualizar cuenta: ' + e.message)
+    }
+  }
+
+  window.borrarCuenta = async function(i) {
+    const c = cuentasCache[i]
+    if (!c) return
+    if (!confirm(`Eliminar cuenta "${c.alias}"?`)) return
+    try {
+      await eliminarCuentaDestino(c.id)
+      await cargarCuentas()
+      alert('Cuenta eliminada.')
+    } catch (e) {
+      alert('Error al eliminar cuenta: ' + e.message)
+    }
+  }
+
+  // ── CAMIONEROS ────────────────────────────────────────────────
+  window.cargarCamioneros = async function() {
+    const q = document.getElementById('f-cam-busqueda')?.value.toLowerCase() || ''
+    document.getElementById('tbody-camioneros').innerHTML =
+      '<tr><td colspan="9" class="empty">Cargando...</td></tr>'
+    try {
+      const data = await listarCamioneros()
+      camioneroCache = data
+      const filtered = q
+        ? data.filter(c =>
+            (c.nombre + ' ' + c.apellido).toLowerCase().includes(q) ||
+            c.dni?.includes(q) || c.email?.toLowerCase().includes(q)
+          )
+        : data
+
+      const tb = document.getElementById('tbody-camioneros')
+      if (!filtered.length) {
+        tb.innerHTML = '<tr><td colspan="9" class="empty">No se encontraron camioneros.</td></tr>'
+        return
+      }
+      tb.innerHTML = filtered.map((c, i) => `
+        <tr>
+          <td>${c.nombre}</td>
+          <td>${c.apellido}</td>
+          <td class="mono">${c.dni}</td>
+          <td class="mono">${c.cuit}</td>
+          <td>${c.email}</td>
+          <td>${c.celular}</td>
+          <td><span class="badge ${c.email_verificado ? 'aprobado' : 'pendiente'}">${c.email_verificado ? 'Verificado' : 'Pendiente'}</span></td>
+          <td>${new Date(c.created_at).toLocaleDateString('es-AR')}</td>
+          <td><button class="btn-ver" onclick="openCamioneroModal(${i})">Ver</button></td>
+        </tr>`).join('')
+    } catch(e) {
+      document.getElementById('tbody-camioneros').innerHTML =
+        `<tr><td colspan="9" class="empty">Error: ${e.message}</td></tr>`
+    }
+  }
+
+  window.openCamioneroModal = async function(i) {
+    cerrarZoomDni()
+    const c = camioneroCache[i]
+    if (!c) return
+
+    document.getElementById('modal-solicitud').style.display = 'none'
+    document.getElementById('modal-camionero-solicitudes').style.display = 'block'
+
+    document.getElementById('m-titulo').textContent = `Camionero — ${c.nombre || ''} ${c.apellido || ''}`.trim()
+
+    // Acciones de solicitud (aprobar/rechazar) no aplican
+    document.getElementById('btn-aprobar').style.display = 'none'
+    document.getElementById('btn-rechazar').style.display = 'none'
+    modalSolicitudId = null
+
+    document.getElementById('m-nombre').textContent  = `${c.nombre || ''} ${c.apellido || ''}`.trim()
+    document.getElementById('m-dni').textContent     = c.dni || ''
+    document.getElementById('m-cuit').textContent    = c.cuit || ''
+    document.getElementById('m-email').textContent   = c.email || ''
+    document.getElementById('m-celular').textContent = c.celular || ''
+
+    const fImg = document.getElementById('m-img-frente')
+    const dImg = document.getElementById('m-img-dorso')
+    fImg.src = ''
+    dImg.src = ''
+    fImg.style.display = 'none'
+    dImg.style.display = 'none'
+    fImg.title = ''
+    dImg.title = ''
+
+    try {
+      const sols = await obtenerSolicitudesDeCamionero(c.id)
+      camSolicitudesCache = Array.isArray(sols) ? sols : []
+      const lastWithDni = (sols || []).find(x => x?.dni_frente_url || x?.dni_dorso_url) || (sols || [])[0]
+      if (lastWithDni?.dni_frente_url) {
+        fImg.src = lastWithDni.dni_frente_url
+        fImg.style.display = 'block'
+        fImg.title = 'Tocá para ampliar'
+      } else {
+        fImg.title = ''
+      }
+      if (lastWithDni?.dni_dorso_url) {
+        dImg.src = lastWithDni.dni_dorso_url
+        dImg.style.display = 'block'
+        dImg.title = 'Tocá para ampliar'
+      } else {
+        dImg.title = ''
+      }
+
+      document.getElementById('cam-solicitudes-q').value = ''
+      renderCamioneroSolicitudes(camSolicitudesCache)
+    } catch (e) {
+      console.error(e)
+      document.getElementById('cam-solicitudes-empty').style.display = 'block'
+      document.getElementById('cam-solicitudes-empty').textContent = 'Error cargando solicitudes.'
+    }
+
+    document.getElementById('overlay').classList.add('open')
+  }
+
+  function renderCamioneroSolicitudes(sols) {
+    const tb = document.getElementById('cam-solicitudes-tbody')
+    const empty = document.getElementById('cam-solicitudes-empty')
+    if (!sols || !sols.length) {
+      tb.innerHTML = ''
+      empty.style.display = 'block'
+      empty.textContent = 'No hay solicitudes.'
+      return
+    }
+    empty.style.display = 'none'
+    tb.innerHTML = sols.map(s => {
+      const fecha = s.created_at ? new Date(s.created_at).toLocaleDateString('es-AR') : ''
+      const estado = s.estado || 'pendiente'
+      const monto = '$' + Number(s.monto || 0).toLocaleString('es-AR')
+      return `
+        <tr>
+          <td class="mono">${s.numero || ''}</td>
+          <td class="mono">${s.numero_echeq || ''}</td>
+          <td>${estado}</td>
+          <td>${fecha}</td>
+          <td>${monto}</td>
+        </tr>
+      `
+    }).join('')
+  }
+
+  window.filtrarSolicitudesCamionero = function() {
+    const q = (document.getElementById('cam-solicitudes-q').value || '').trim().toLowerCase()
+    if (!q) {
+      renderCamioneroSolicitudes(camSolicitudesCache)
+      return
+    }
+    const filtered = camSolicitudesCache.filter(s => {
+      const numero = String(s.numero || '').toLowerCase()
+      const echeq = String(s.numero_echeq || '').toLowerCase()
+      const estado = String(s.estado || '').toLowerCase()
+      return numero.includes(q) || echeq.includes(q) || estado.includes(q)
+    })
+    renderCamioneroSolicitudes(filtered)
+  }
+
+  // ── EXPORT ────────────────────────────────────────────────────
+  window.exportar    = () => exportarSolicitudes(solicitudesCache)
+  window.exportarCam = () => exportarCamioneros(camioneroCache)
+
+  // Cerrar modal clickeando overlay
+  document.getElementById('overlay').addEventListener('click', function(e) {
+    if (e.target === this) closeModal()
+  })
+  document.getElementById('overlay-cuenta').addEventListener('click', function(e) {
+    if (e.target === this) cerrarModalCuenta()
+  })
+</script>
+
+</body>
+</html>

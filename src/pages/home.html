@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mis solicitudes — Pago Nacional</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy:#12122a; --accent:#4f46e5; --text:#1a1a2e; --text-muted:#6b7280;
+      --border:#e5e7eb; --bg:#f9f9f7; --white:#ffffff; --danger:#dc2626;
+      --card-mobile: #ebece4;
+      --card-mobile-border: #dadccf;
+    }
+    body {
+      font-family:'DM Sans',sans-serif; background:var(--bg); min-height:100vh; color:var(--text);
+      display: flex; flex-direction: column;
+    }
+
+    .header {
+      flex-shrink: 0;
+      background: var(--navy);
+      padding: 10px 16px;
+      min-height: 68px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    /* Logo PNG con transparencia, directo sobre el header */
+    .brand {
+      flex: 1;
+      min-width: 0;
+      max-width: calc(100% - 132px);
+      height: 54px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      cursor: pointer;
+      line-height: 0;
+      background: transparent;
+    }
+    .brand img {
+      display: block;
+      max-width: 100%;
+      max-height: 100%;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      object-position: left center;
+      image-rendering: auto;
+    }
+    /* Logo apaisado (≈2.8:1): en desktop subimos la caja para que se lea bien */
+    @media (min-width: 768px) {
+      .header { min-height: 76px; padding: 12px 20px; }
+      .brand {
+        height: 64px;
+        max-width: min(560px, calc(100% - 160px));
+      }
+    }
+    @media (min-width: 1024px) {
+      .brand {
+        height: 72px;
+        max-width: min(640px, calc(100% - 170px));
+      }
+    }
+    @media (min-width: 1280px) {
+      .brand {
+        height: 76px;
+        max-width: min(720px, calc(100% - 180px));
+      }
+    }
+
+    .logout {
+      flex-shrink: 0;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.28);
+      color: #fff;
+      padding: 10px 16px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      min-height: 44px;
+      white-space: nowrap;
+    }
+    .logout:hover { background: rgba(255,255,255,0.14); border-color: rgba(255,255,255,0.45); }
+    .logout:active { transform: scale(0.98); }
+
+    .main {
+      flex: 1;
+      width: 100%;
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 20px 16px 28px;
+      padding-bottom: max(28px, env(safe-area-inset-bottom, 0px));
+      display: flex;
+      flex-direction: column;
+    }
+    /* Tablet / desktop: panel más ancho para la tabla (móvil sin cambios) */
+    @media (min-width: 768px) {
+      .main {
+        max-width: min(1480px, calc(100vw - 40px));
+        padding: 24px 20px 28px;
+      }
+    }
+    @media (min-width: 1200px) {
+      .main {
+        max-width: min(1600px, calc(100vw - 48px));
+        padding: 24px 24px 28px;
+      }
+    }
+
+    .title { font-family:'DM Serif Display',serif; font-size: clamp(22px, 5vw, 28px); margin-bottom: 8px; line-height: 1.15; }
+    .sub { color: var(--text-muted); font-size: 14px; margin-bottom: 20px; line-height: 1.55; max-width: 42em; }
+
+    .card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      flex: 1;
+      min-height: 0;
+    }
+    /* Móvil: sin panel blanco gigante; tarjetas sueltas sobre el fondo crema */
+    @media (max-width: 767px) {
+      .card {
+        background: transparent;
+        border: none;
+        box-shadow: none;
+        border-radius: 0;
+        overflow: visible;
+      }
+    }
+
+    .alert { padding: 12px 16px; border-radius: 10px; font-size: 13px; margin-bottom: 12px; display: none; }
+    .alert.error { background:#fee2e2; color:#991b1b; display:block; }
+
+    /* Tabla — solo tablet/desktop */
+    .table-wrap {
+      display: none;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .table-wrap::-webkit-scrollbar { height: 8px; }
+    .table-wrap::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 4px; }
+    .card.has-data .table-wrap { display: block; }
+    @media (max-width: 767px) {
+      .card.has-data .table-wrap { display: none !important; }
+    }
+
+    .tbl { width: 100%; min-width: 1040px; border-collapse: collapse; font-size: 13px; }
+    /* Si el panel ya es ancho, la tabla entra sin scroll horizontal */
+    @media (min-width: 1100px) {
+      .table-wrap { overflow-x: visible; }
+      .tbl { min-width: 100%; }
+    }
+    .tbl th {
+      text-align: left;
+      padding: 12px 14px;
+      background: #fafafa;
+      border-bottom: 1px solid var(--border);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+    .tbl td { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    .tbl tbody tr:last-child td { border-bottom: none; }
+    .tbl tbody tr:hover td { background: #fafafa; }
+    .mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 12px;
+      word-break: break-all;
+    }
+
+    .empty { padding: 28px 20px; color: var(--text-muted); text-align: center; line-height: 1.5; font-size: 14px; }
+    @media (max-width: 767px) {
+      .empty {
+        background: var(--card-mobile);
+        border: 1px solid var(--card-mobile-border);
+        border-radius: 14px;
+        box-shadow: 0 1px 2px rgba(18, 18, 42, 0.06);
+      }
+    }
+    .card.has-data .empty { display: none; }
+    .card.has-empty .empty { display: block; }
+    .card.has-empty .table-wrap,
+    .card.has-empty .cards-list { display: none !important; }
+
+    .badge { display:inline-block; padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; text-transform: capitalize; }
+    .badge.pendiente { background:#fef3c7; color:#92400e; }
+    .badge.aprobado  { background:#d1fae5; color:#065f46; }
+    .badge.rechazado { background:#fee2e2; color:#991b1b; }
+
+    /* Tarjetas — solo móvil */
+    .cards-list {
+      display: none;
+      flex-direction: column;
+      gap: 12px;
+    }
+    @media (max-width: 767px) {
+      .card.has-data .cards-list { display: flex; }
+    }
+
+    .sol-card {
+      padding: 20px 18px;
+      border-bottom: 1px solid var(--border);
+    }
+    .sol-card:last-child { border-bottom: none; }
+    @media (max-width: 767px) {
+      .sol-card {
+        background: var(--card-mobile);
+        border: 1px solid var(--card-mobile-border);
+        border-radius: 14px;
+        border-bottom: 1px solid var(--card-mobile-border);
+        box-shadow: 0 1px 2px rgba(18, 18, 42, 0.06);
+      }
+    }
+    .sol-card-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+    .sol-num { font-size: 13px; font-weight: 600; color: var(--text); line-height: 1.35; flex: 1; min-width: 0; }
+    .sol-dl { display: grid; gap: 12px; font-size: 14px; }
+    .sol-row {
+      display: grid;
+      grid-template-columns: minmax(92px, 34%) 1fr;
+      gap: 8px 14px;
+      align-items: start;
+    }
+    .sol-row dt { color: var(--text-muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.03em; }
+    .sol-row dd { margin: 0; color: var(--text); word-break: break-word; line-height: 1.45; }
+    @media (max-width: 360px) {
+      .sol-row { grid-template-columns: 1fr; gap: 4px; }
+      .sol-row dt { margin-bottom: 2px; }
+    }
+
+    /* Acciones: ancho completo en móvil */
+    .actions-bar {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 28px;
+      width: 100%;
+      align-self: stretch;
+    }
+    @media (min-width: 640px) {
+      .actions-bar { max-width: 520px; align-self: center; }
+    }
+    .bbtn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 48px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 2px solid var(--navy);
+      background: var(--white);
+      color: var(--navy);
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+    }
+    .bbtn.secondary {
+      border-color: var(--border);
+      color: var(--text);
+      background: var(--white);
+    }
+    .bbtn:hover { background: #f8f8fc; }
+    .bbtn.primary { background: var(--navy); color: #fff; border-color: var(--navy); }
+    .bbtn.primary:hover { background: #0f0f22; }
+    .bbtn:active { transform: translateY(1px); }
+
+    .btn-ver-cuenta {
+      padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border);
+      background: var(--white); color: var(--navy); font-size: 12px; font-weight: 600;
+      cursor: pointer; font-family: 'DM Sans', sans-serif; white-space: nowrap;
+    }
+    .btn-ver-cuenta:hover:not(:disabled) { background: #f4f4f1; border-color: var(--navy); }
+    .btn-ver-cuenta:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .cuenta-overlay {
+      position: fixed; inset: 0; background: rgba(10,10,30,0.45);
+      display: none; align-items: center; justify-content: center; z-index: 200;
+      padding: 20px;
+    }
+    .cuenta-overlay.open { display: flex; }
+    .cuenta-modal {
+      background: var(--white); border-radius: 14px; border: 1px solid var(--border);
+      width: 100%; max-width: 420px; max-height: 90vh; overflow-y: auto;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+    }
+    .cuenta-modal-head {
+      padding: 18px 20px; border-bottom: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center; gap: 12px;
+    }
+    .cuenta-modal-head h2 { font-size: 16px; font-weight: 600; margin: 0; }
+    .cuenta-modal-close {
+      border: none; background: none; font-size: 22px; line-height: 1; cursor: pointer;
+      color: var(--text-muted); padding: 4px;
+    }
+    .cuenta-modal-body { padding: 18px 20px 22px; }
+    .cuenta-dl { display: grid; gap: 14px; }
+    .cuenta-dl div { display: grid; gap: 4px; }
+    .cuenta-dl dt { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); }
+    .cuenta-dl dd { margin: 0; font-size: 14px; color: var(--text); word-break: break-word; line-height: 1.45; }
+    .cuenta-dl dd.mono { font-family: ui-monospace, monospace; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <span class="brand" onclick="goHome()" role="button" tabindex="0" onkeydown="if(event.key==='Enter')goHome()">
+      <img src="/logo-pago-nacional.png?v=5" alt="Pago Nacional" width="1063" height="378" decoding="async" />
+    </span>
+    <button type="button" class="logout" onclick="logout()">Cerrar sesión</button>
+  </header>
+
+  <main class="main">
+    <h1 class="title">Mis solicitudes</h1>
+    <p class="sub">Acá vas a ver el estado de tus solicitudes.</p>
+    <div id="alert" class="alert"></div>
+
+    <div class="card" id="card">
+      <div id="empty" class="empty">Cargando…</div>
+      <div class="table-wrap">
+        <table class="tbl" id="tbl" aria-label="Listado de solicitudes">
+          <thead>
+            <tr>
+              <th>N° Solicitud</th>
+              <th>N° Echeq</th>
+              <th>Monto</th>
+              <th>Titular</th>
+              <th>Alias</th>
+              <th>CBU / CVU</th>
+              <th>Banco cuenta</th>
+              <th>Banco echeq</th>
+              <th>Estado</th>
+              <th>Fecha</th>
+              <th>Detalle</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+      <div id="cards" class="cards-list" aria-label="Solicitudes"></div>
+    </div>
+
+    <div class="actions-bar">
+      <button type="button" class="bbtn primary" onclick="goNuevaSolicitud()">Nueva solicitud</button>
+      <button type="button" class="bbtn secondary" onclick="goPerfil()">Mi perfil</button>
+    </div>
+  </main>
+
+  <div class="cuenta-overlay" id="cuenta-overlay" onclick="if(event.target===this)cerrarModalCuenta()">
+    <div class="cuenta-modal" onclick="event.stopPropagation()">
+      <div class="cuenta-modal-head">
+        <h2 id="cuenta-modal-title">Cuenta destino</h2>
+        <button type="button" class="cuenta-modal-close" onclick="cerrarModalCuenta()" aria-label="Cerrar">×</button>
+      </div>
+      <div class="cuenta-modal-body">
+        <p class="sub" style="margin-bottom:16px;font-size:13px;">Datos para transferir el monto aprobado.</p>
+        <dl class="cuenta-dl">
+          <div><dt>Titular</dt><dd id="cd-titular">—</dd></div>
+          <div><dt>Alias</dt><dd id="cd-alias" class="mono">—</dd></div>
+          <div><dt>CBU / CVU</dt><dd id="cd-cbu" class="mono">—</dd></div>
+          <div><dt>Banco</dt><dd id="cd-banco">—</dd></div>
+        </dl>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { obtenerCamioneroPorEmail, obtenerSolicitudesDeCamionero } from '../lib/supabase.js'
+
+    const alertEl = document.getElementById('alert')
+    const cardEl = document.getElementById('card')
+
+    function showError(msg) {
+      alertEl.className = 'alert error'
+      alertEl.textContent = msg
+    }
+    function badgeCls(estado) {
+      if (estado === 'aprobado') return 'aprobado'
+      if (estado === 'rechazado') return 'rechazado'
+      return 'pendiente'
+    }
+
+    function cuentaDestinoFields(s) {
+      const titular = String(s.cuenta_destino_titular || '').trim()
+      const alias = String(s.cuenta_destino_alias || '').trim()
+      const cbu = String(s.cuenta_destino_cvu || '').trim()
+      const bancoCta = String(s.cuenta_destino_banco || '').trim()
+      const has = !!(titular || alias || cbu || bancoCta)
+      return { titular, alias, cbu, bancoCta, has }
+    }
+
+    function dash(v) {
+      return v || '—'
+    }
+
+    window._homeSolicitudesCache = []
+
+    window.verCuentaDestino = function(id) {
+      const s = window._homeSolicitudesCache.find(x => x.id === id)
+      if (!s) return
+      const { titular, alias, cbu, bancoCta, has } = cuentaDestinoFields(s)
+      if (!has) return
+      document.getElementById('cuenta-modal-title').textContent =
+        `Cuenta destino · ${s.numero || ''}`
+      document.getElementById('cd-titular').textContent = dash(titular)
+      document.getElementById('cd-alias').textContent = dash(alias)
+      document.getElementById('cd-cbu').textContent = dash(cbu)
+      document.getElementById('cd-banco').textContent = dash(bancoCta)
+      document.getElementById('cuenta-overlay').classList.add('open')
+      document.body.style.overflow = 'hidden'
+    }
+
+    window.cerrarModalCuenta = function() {
+      document.getElementById('cuenta-overlay').classList.remove('open')
+      document.body.style.overflow = ''
+    }
+
+    document.addEventListener('keydown', e => {
+      if (e.key !== 'Escape') return
+      if (document.getElementById('cuenta-overlay')?.classList.contains('open')) cerrarModalCuenta()
+    })
+
+    window.goNuevaSolicitud = () => { window.location.href = '/src/pages/solicitud.html' }
+    window.goPerfil = () => { window.location.href = '/src/pages/perfil.html' }
+    window.goHome = () => { window.location.href = '/src/pages/home.html' }
+    window.logout = () => {
+      sessionStorage.removeItem('camionero_id')
+      sessionStorage.removeItem('camionero_email')
+      sessionStorage.removeItem('camionero_nombre')
+      window.location.href = '/src/pages/login.html'
+    }
+
+    function cardHtml(s) {
+      const cls = badgeCls(s.estado)
+      const fecha = new Date(s.created_at).toLocaleDateString('es-AR')
+      const monto = `$${Number(s.monto || 0).toLocaleString('es-AR')}`
+      const cd = cuentaDestinoFields(s)
+      const verBtn = cd.has
+        ? `<button type="button" class="btn-ver-cuenta" style="margin-top:10px;width:100%" onclick="verCuentaDestino('${s.id}')">Ver datos completos</button>`
+        : ''
+      return `
+        <article class="sol-card">
+          <div class="sol-card-top">
+            <span class="mono sol-num">${s.numero}</span>
+            <span class="badge ${cls}">${s.estado}</span>
+          </div>
+          <dl class="sol-dl">
+            <div class="sol-row"><dt>Echeq</dt><dd class="mono">${s.numero_echeq}</dd></div>
+            <div class="sol-row"><dt>Monto</dt><dd>${monto}</dd></div>
+            <div class="sol-row"><dt>Titular</dt><dd>${dash(cd.titular)}</dd></div>
+            <div class="sol-row"><dt>Alias</dt><dd class="mono">${dash(cd.alias)}</dd></div>
+            <div class="sol-row"><dt>CBU / CVU</dt><dd class="mono">${dash(cd.cbu)}</dd></div>
+            <div class="sol-row"><dt>Banco cuenta</dt><dd>${dash(cd.bancoCta)}</dd></div>
+            <div class="sol-row"><dt>Banco echeq</dt><dd>${s.banco_emisor}</dd></div>
+            <div class="sol-row"><dt>Fecha</dt><dd>${fecha}</dd></div>
+          </dl>
+          ${verBtn}
+        </article>
+      `
+    }
+
+    async function loadPage() {
+      const email = sessionStorage.getItem('camionero_email')
+      const camioneroId = sessionStorage.getItem('camionero_id')
+      if (!email || !camioneroId) {
+        window.location.href = '/src/pages/login.html'
+        return
+      }
+
+      try {
+        const c = await obtenerCamioneroPorEmail(email)
+        if (!c.email_verificado) {
+          window._homeSolicitudesCache = []
+          cardEl.classList.remove('has-data', 'has-empty')
+          document.getElementById('empty').style.display = 'none'
+          showError('Tu cuenta todavía no está verificada. Revisá tu email y verificá tu cuenta.')
+          return
+        }
+
+        const rows = await obtenerSolicitudesDeCamionero(camioneroId)
+        const empty = document.getElementById('empty')
+        const tb = document.getElementById('tbody')
+        const cardsEl = document.getElementById('cards')
+
+        if (!rows.length) {
+          window._homeSolicitudesCache = []
+          cardEl.classList.remove('has-data')
+          cardEl.classList.add('has-empty')
+          empty.textContent = 'Todavía no tenés solicitudes.'
+          return
+        }
+
+        window._homeSolicitudesCache = rows
+
+        cardEl.classList.remove('has-empty')
+        cardEl.classList.add('has-data')
+        empty.style.display = 'none'
+
+        tb.innerHTML = rows.map(s => {
+          const cls = badgeCls(s.estado)
+          const fecha = new Date(s.created_at).toLocaleDateString('es-AR')
+          const cd = cuentaDestinoFields(s)
+          const verDisabled = cd.has ? '' : ' disabled'
+          return `
+            <tr>
+              <td class="mono">${s.numero}</td>
+              <td class="mono">${s.numero_echeq}</td>
+              <td>$${Number(s.monto || 0).toLocaleString('es-AR')}</td>
+              <td>${dash(cd.titular)}</td>
+              <td class="mono">${dash(cd.alias)}</td>
+              <td class="mono">${dash(cd.cbu)}</td>
+              <td>${dash(cd.bancoCta)}</td>
+              <td>${s.banco_emisor}</td>
+              <td><span class="badge ${cls}">${s.estado}</span></td>
+              <td>${fecha}</td>
+              <td><button type="button" class="btn-ver-cuenta" onclick="verCuentaDestino('${s.id}')"${verDisabled}>Ver</button></td>
+            </tr>
+          `
+        }).join('')
+
+        cardsEl.innerHTML = rows.map(cardHtml).join('')
+      } catch (e) {
+        console.error(e)
+        window._homeSolicitudesCache = []
+        cardEl.classList.remove('has-data', 'has-empty')
+        document.getElementById('empty').style.display = 'none'
+        showError(e?.message || 'Error cargando tus solicitudes.')
+      }
+    }
+
+    loadPage()
+  </script>
+</body>
+</html>

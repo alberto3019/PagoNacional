@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Verificación pendiente — Pago Nacional</title>
+  <style>
+    .app-header {
+      background: #12122a; min-height: 60px; display: flex; align-items: center; padding: 10px 20px;
+      margin: -28px -28px 24px -28px;
+    }
+    .app-header .logo-wrap {
+      height: 48px; max-width: min(320px, calc(100vw - 48px)); display: flex; align-items: center;
+      background: transparent;
+    }
+    .app-header img { max-height: 100%; max-width: 100%; width: auto; height: auto; object-fit: contain; display: block; }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; padding: 28px; margin: 0; }
+    .card { max-width: 560px; border: 1px solid #e5e7eb; border-radius: 14px; padding: 18px 18px; background: #fff; }
+    .muted { color: #6b7280; line-height: 1.6; }
+    a { color: #4f46e5; text-decoration: none; font-weight: 600; }
+    .links { margin-top: 14px; display: flex; gap: 12px; flex-wrap: wrap; }
+  </style>
+</head>
+<body>
+  <div class="app-header"><div class="logo-wrap"><img src="/logo-pago-nacional.png?v=5" alt="Pago Nacional" width="1063" height="378" decoding="async" /></div></div>
+  <div class="card">
+    <h2>Te enviamos un email para verificar tu cuenta</h2>
+    <p class="muted">
+      Revisá tu casilla (y spam). Cuando verifiques, vas a poder cargar tu solicitud.
+    </p>
+    <p class="muted" id="local-note" style="display:none; margin-top:12px;">
+      Estás en modo local (sin emails). Usá este link de verificación:
+      <a id="verify-link" href="#">Verificar cuenta</a>
+    </p>
+    <div class="links">
+      <a href="/src/pages/registro.html">Volver al registro</a>
+      <a href="/src/pages/login.html">Ya verifiqué, ingresar</a>
+    </div>
+  </div>
+
+  <script type="module">
+    // Si no hay Resend/Supabase configurado, mostramos el link para probar el flujo.
+    const params = new URLSearchParams(location.search)
+    const id = params.get('id')
+    const isLocal =
+      !import.meta.env.VITE_SUPABASE_URL ||
+      String(import.meta.env.VITE_SUPABASE_URL).includes('xxxxxxxx')
+
+    if (isLocal && id) {
+      const note = document.getElementById('local-note')
+      const link = document.getElementById('verify-link')
+      link.href = `/src/pages/verificar.html?id=${encodeURIComponent(id)}`
+      note.style.display = 'block'
+    }
+  </script>
+</body>
+</html>

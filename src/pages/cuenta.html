@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mi cuenta — Pago Nacional</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy:#12122a; --accent:#4f46e5; --text:#1a1a2e; --text-muted:#6b7280;
+      --border:#e5e7eb; --bg:#f9f9f7; --white:#ffffff; --danger:#dc2626;
+    }
+    body { font-family:'DM Sans',sans-serif; background:var(--bg); min-height:100vh; color:var(--text); }
+    .header {
+      background: var(--navy); padding: 10px 16px; min-height: 68px;
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    }
+    .brand {
+      flex: 1; min-width: 0; max-width: calc(100% - 130px); height: 52px;
+      display: flex; align-items: center; justify-content: flex-start;
+      background: transparent; line-height: 0;
+    }
+    .brand img {
+      display: block; max-width: 100%; max-height: 100%; width: auto; height: auto;
+      object-fit: contain; object-position: left center;
+    }
+    .header-sub {
+      flex-shrink: 0; max-width: 38%; text-align: right; line-height: 1.35;
+      color: rgba(255,255,255,0.5); font-size: 10px;
+    }
+    @media (min-width: 480px) {
+      .header-sub { font-size: 12px; max-width: 46%; }
+    }
+    @media (min-width: 768px) {
+      .header { min-height: 72px; padding: 12px 20px; }
+      .brand { height: 64px; max-width: min(560px, calc(100% - 160px)); }
+    }
+    @media (min-width: 1024px) {
+      .brand { height: 72px; max-width: min(640px, calc(100% - 180px)); }
+    }
+    @media (min-width: 1280px) {
+      .brand { height: 76px; max-width: min(700px, calc(100% - 200px)); }
+    }
+    .container { max-width: 980px; margin: 0 auto; padding: 28px 20px 60px; }
+    .title { font-family:'DM Serif Display',serif; font-size: 26px; margin-bottom: 6px; }
+    .sub { color: var(--text-muted); font-size: 14px; margin-bottom: 18px; line-height: 1.6; }
+    .grid { display:grid; grid-template-columns: 320px 1fr; gap: 14px; align-items:start; }
+    .card { background:var(--white); border:1px solid var(--border); border-radius: 12px; padding: 18px; }
+    .section { font-size: 11px; font-weight: 500; letter-spacing: 0.8px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; }
+    .row { display:flex; justify-content:space-between; gap: 12px; padding: 9px 0; border-bottom: 1px solid #f3f4f6; font-size: 14px; }
+    .row:last-child { border-bottom: none; }
+    .label { color: var(--text-muted); }
+    .val { font-weight: 500; text-align:right; }
+    .btn { display:inline-flex; align-items:center; justify-content:center; gap: 8px; padding: 11px 14px; border-radius: 10px; border: 1px solid var(--border); background: transparent; cursor: pointer; font-family:'DM Sans',sans-serif; font-weight: 500; }
+    .btn-primary { background: var(--navy); border-color: var(--navy); color:#fff; }
+    .btn-primary:hover { background:#0f0f22; }
+    .btn:hover { background: #f3f4f6; }
+    .actions { display:flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+    .tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .tbl th { text-align:left; padding: 10px 12px; background: #fafafa; border-bottom: 1px solid var(--border); font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-muted); }
+    .tbl td { padding: 11px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 12px; }
+    .empty { padding: 18px; color: var(--text-muted); }
+    .badge { display:inline-block; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+    .badge.pendiente { background:#fef3c7; color:#92400e; }
+    .badge.aprobado  { background:#d1fae5; color:#065f46; }
+    .badge.rechazado { background:#fee2e2; color:#991b1b; }
+    .alert { padding: 12px 16px; border-radius: 10px; font-size: 13px; margin-bottom: 12px; display:none; }
+    .alert.error { background:#fee2e2; color:#991b1b; display:block; }
+    @media (max-width: 860px) { .grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <span class="brand"><img src="/logo-pago-nacional.png?v=5" alt="Pago Nacional" width="1063" height="378" decoding="async" /></span>
+    <span class="header-sub">Mi cuenta</span>
+  </div>
+
+  <div class="container">
+    <h1 class="title">Mi cuenta</h1>
+    <p class="sub">Tus datos y tus solicitudes de cambio de echeq.</p>
+
+    <div id="alert" class="alert"></div>
+
+    <div class="grid">
+      <div class="card">
+        <div class="section">Perfil</div>
+        <div class="row"><span class="label">Nombre</span><span class="val" id="p-nombre">—</span></div>
+        <div class="row"><span class="label">Apellido</span><span class="val" id="p-apellido">—</span></div>
+        <div class="row"><span class="label">DNI</span><span class="val mono" id="p-dni">—</span></div>
+        <div class="row"><span class="label">CUIT</span><span class="val mono" id="p-cuit">—</span></div>
+        <div class="row"><span class="label">Email</span><span class="val" id="p-email">—</span></div>
+        <div class="row"><span class="label">Celular</span><span class="val" id="p-cel">—</span></div>
+
+        <div class="actions">
+          <button class="btn btn-primary" onclick="nuevaSolicitud()">Nueva solicitud</button>
+          <button class="btn" onclick="logout()">Cerrar sesión</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section">Mis solicitudes</div>
+        <div id="empty" class="empty">Cargando…</div>
+        <table class="tbl" id="tbl" style="display:none">
+          <thead>
+            <tr>
+              <th>N° Solicitud</th>
+              <th>N° Echeq</th>
+              <th>Monto</th>
+              <th>Banco</th>
+              <th>Estado</th>
+              <th>Fecha</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { obtenerCamioneroPorEmail, obtenerSolicitudesDeCamionero } from '../lib/supabase.js'
+
+    const alertEl = document.getElementById('alert')
+
+    function showError(msg) {
+      alertEl.className = 'alert error'
+      alertEl.textContent = msg
+    }
+
+    function badgeCls(estado) {
+      if (estado === 'aprobado') return 'aprobado'
+      if (estado === 'rechazado') return 'rechazado'
+      return 'pendiente'
+    }
+
+    window.logout = function() {
+      sessionStorage.removeItem('camionero_id')
+      sessionStorage.removeItem('camionero_email')
+      sessionStorage.removeItem('camionero_nombre')
+      window.location.href = '/src/pages/login.html'
+    }
+
+    window.nuevaSolicitud = function() {
+      window.location.href = '/src/pages/solicitud.html'
+    }
+
+    async function loadPage() {
+      const email = sessionStorage.getItem('camionero_email')
+      const camioneroId = sessionStorage.getItem('camionero_id')
+      if (!email || !camioneroId) {
+        window.location.href = '/src/pages/login.html'
+        return
+      }
+
+      try {
+        const c = await obtenerCamioneroPorEmail(email)
+        if (!c.email_verificado) {
+          showError('Tu cuenta todavía no está verificada. Revisá tu email y verificá tu cuenta.')
+          return
+        }
+
+        document.getElementById('p-nombre').textContent = c.nombre || '—'
+        document.getElementById('p-apellido').textContent = c.apellido || '—'
+        document.getElementById('p-dni').textContent = c.dni || '—'
+        document.getElementById('p-cuit').textContent = c.cuit || '—'
+        document.getElementById('p-email').textContent = c.email || '—'
+        document.getElementById('p-cel').textContent = c.celular || '—'
+
+        const rows = await obtenerSolicitudesDeCamionero(camioneroId)
+        const empty = document.getElementById('empty')
+        const tbl = document.getElementById('tbl')
+        const tb = document.getElementById('tbody')
+
+        if (!rows.length) {
+          empty.textContent = 'Todavía no tenés solicitudes.'
+          tbl.style.display = 'none'
+          return
+        }
+
+        empty.style.display = 'none'
+        tbl.style.display = 'table'
+        tb.innerHTML = rows.map(s => {
+          const cls = badgeCls(s.estado)
+          const fecha = new Date(s.created_at).toLocaleDateString('es-AR')
+          return `
+            <tr>
+              <td class="mono">${s.numero}</td>
+              <td class="mono">${s.numero_echeq}</td>
+              <td>$${Number(s.monto || 0).toLocaleString('es-AR')}</td>
+              <td>${s.banco_emisor}</td>
+              <td><span class="badge ${cls}">${s.estado}</span></td>
+              <td>${fecha}</td>
+            </tr>
+          `
+        }).join('')
+      } catch (e) {
+        console.error(e)
+        showError(e?.message || 'Error cargando tu cuenta.')
+      }
+    }
+
+    loadPage()
+  </script>
+</body>
+</html>
+

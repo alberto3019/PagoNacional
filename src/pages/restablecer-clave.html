@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nueva contraseña — Pago Nacional</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy: #12122a; --accent: #4f46e5; --text: #1a1a2e; --text-muted: #6b7280;
+      --border: #e5e7eb; --bg: #f9f9f7; --white: #ffffff; --danger: #dc2626;
+    }
+    body { font-family: 'DM Sans', sans-serif; background: var(--bg); min-height: 100vh; color: var(--text); }
+    .header {
+      background: var(--navy); padding: 10px 16px; min-height: 68px;
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    }
+    .brand {
+      flex: 1; min-width: 0; max-width: calc(100% - 130px); height: 52px;
+      display: flex; align-items: center; justify-content: flex-start;
+      background: transparent; line-height: 0;
+    }
+    .brand img {
+      display: block; max-width: 100%; max-height: 100%; width: auto; height: auto;
+      object-fit: contain; object-position: left center;
+    }
+    .header-sub {
+      flex-shrink: 0; max-width: 38%; text-align: right; line-height: 1.35;
+      color: rgba(255,255,255,0.5); font-size: 10px;
+    }
+    @media (min-width: 480px) {
+      .header-sub { font-size: 12px; max-width: 46%; }
+    }
+    @media (min-width: 768px) {
+      .header { min-height: 72px; padding: 12px 20px; }
+      .brand { height: 64px; max-width: min(560px, calc(100% - 160px)); }
+    }
+    @media (min-width: 1024px) {
+      .brand { height: 72px; max-width: min(640px, calc(100% - 180px)); }
+    }
+    @media (min-width: 1280px) {
+      .brand { height: 76px; max-width: min(700px, calc(100% - 200px)); }
+    }
+    .container { max-width: 480px; margin: 0 auto; padding: 32px 20px 60px; }
+    .page-title { font-family: 'DM Serif Display', serif; font-size: 26px; margin-bottom: 6px; }
+    .page-sub { font-size: 14px; color: var(--text-muted); margin-bottom: 22px; line-height: 1.6; }
+    .card { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 16px; }
+    .field { margin-bottom: 16px; }
+    .field:last-child { margin-bottom: 0; }
+    .field label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; }
+    .field input {
+      width: 100%; padding: 11px 14px; border: 1px solid var(--border); border-radius: 8px;
+      font-size: 15px; font-family: 'DM Sans', sans-serif;
+    }
+    .field input:focus { outline: none; border-color: var(--accent); }
+    .btn-primary {
+      width: 100%; padding: 15px; background: var(--navy); color: #fff; border: none; border-radius: 8px;
+      font-size: 15px; font-weight: 500; font-family: 'DM Sans', sans-serif; cursor: pointer;
+    }
+    .btn-primary:hover { background: #0f0f22; }
+    .btn-primary:disabled { opacity: 0.55; cursor: not-allowed; }
+    .alert { padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; display: none; }
+    .alert.error { background: #fee2e2; color: #991b1b; display: block; }
+    .alert.success { background: #d1fae5; color: #065f46; display: block; }
+    .link { text-align: center; font-size: 13px; margin-top: 16px; }
+    .link a { color: var(--accent); text-decoration: none; font-weight: 500; }
+    .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; margin-right: 8px; vertical-align: middle; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #form-wrap.hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <span class="brand"><img src="/logo-pago-nacional.png?v=5" alt="Pago Nacional" width="1063" height="378" decoding="async" /></span>
+    <span class="header-sub">Sistema de cambio de echeqs</span>
+  </div>
+
+  <div class="container">
+    <h1 class="page-title">Nueva contraseña</h1>
+    <p class="page-sub" id="page-sub">Elegí una clave nueva de al menos 8 caracteres.</p>
+
+    <div id="alert" class="alert"></div>
+
+    <div id="form-wrap">
+      <div class="card">
+        <div class="field">
+          <label>Nueva contraseña</label>
+          <input type="password" id="pass1" autocomplete="new-password" minlength="8" />
+        </div>
+        <div class="field">
+          <label>Repetir contraseña</label>
+          <input type="password" id="pass2" autocomplete="new-password" minlength="8" />
+        </div>
+      </div>
+      <button class="btn-primary" type="button" id="btn" onclick="guardarClave()">Guardar y continuar</button>
+    </div>
+
+    <div class="link">
+      <a href="/src/pages/login.html">Ir al inicio de sesión</a>
+    </div>
+  </div>
+
+  <script type="module">
+    import { restablecerPasswordConToken } from '../lib/supabase.js'
+
+    const params = new URLSearchParams(window.location.search)
+    const resetToken = (params.get('t') || params.get('token') || '').trim()
+
+    const alertEl = document.getElementById('alert')
+    const formWrap = document.getElementById('form-wrap')
+    const pageSub = document.getElementById('page-sub')
+
+    if (!resetToken) {
+      pageSub.textContent = 'Falta el enlace de recuperación. Pedí uno nuevo desde el login.'
+      formWrap.classList.add('hidden')
+      alertEl.className = 'alert error'
+      alertEl.textContent = 'Este enlace no es válido.'
+    }
+
+    window.guardarClave = async function() {
+      if (!resetToken) return
+
+      const p1 = document.getElementById('pass1').value
+      const p2 = document.getElementById('pass2').value
+      alertEl.className = 'alert'
+      alertEl.textContent = ''
+
+      if (!p1 || p1.length < 8) {
+        alertEl.className = 'alert error'
+        alertEl.textContent = 'La contraseña debe tener al menos 8 caracteres.'
+        return
+      }
+      if (p1 !== p2) {
+        alertEl.className = 'alert error'
+        alertEl.textContent = 'Las contraseñas no coinciden.'
+        return
+      }
+
+      const btn = document.getElementById('btn')
+      btn.disabled = true
+      btn.innerHTML = '<span class="spinner"></span>Guardando...'
+
+      try {
+        await restablecerPasswordConToken(resetToken, p1)
+        alertEl.className = 'alert success'
+        alertEl.textContent = 'Listo. Ya podés ingresar con tu nueva contraseña.'
+        formWrap.classList.add('hidden')
+        pageSub.textContent = 'Tu clave fue actualizada.'
+      } catch (e) {
+        console.error(e)
+        alertEl.className = 'alert error'
+        alertEl.textContent = e?.message || 'No se pudo guardar. Intentá de nuevo.'
+        btn.disabled = false
+        btn.textContent = 'Guardar y continuar'
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,448 @@
+<!-- src/pages/solicitud.html -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nueva solicitud — Pago Nacional</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy: #12122a; --navy-mid: #1e1e40; --accent: #4f46e5;
+      --text: #1a1a2e; --text-muted: #6b7280; --border: #e5e7eb;
+      --bg: #f9f9f7; --white: #ffffff; --success: #059669; --danger: #dc2626;
+    }
+    body { font-family: 'DM Sans', sans-serif; background: var(--bg); min-height: 100vh; color: var(--text); }
+    .header {
+      background: var(--navy); padding: 10px 14px; min-height: 68px;
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    }
+    .left { flex: 1; min-width: 0; display: inline-flex; align-items: center; gap: 8px; }
+    .back {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.2);
+      background: transparent;
+      color: rgba(255,255,255,0.9);
+      cursor: pointer;
+      font-size: 18px;
+      line-height: 1;
+    }
+    .back:hover { border-color: rgba(255,255,255,0.5); color: #fff; }
+    .brand {
+      flex: 1; min-width: 0; height: 50px;
+      display: flex; align-items: center; justify-content: flex-start;
+      cursor: pointer; line-height: 0;
+      background: transparent;
+    }
+    .brand img {
+      display: block; max-width: 100%; max-height: 100%; width: auto; height: auto;
+      object-fit: contain; object-position: left center;
+    }
+    .header-sub {
+      flex-shrink: 0; max-width: 32%; text-align: right; line-height: 1.25;
+      color: rgba(255,255,255,0.5); font-size: 9px;
+    }
+    @media (min-width: 400px) {
+      .header-sub { font-size: 11px; max-width: 38%; }
+    }
+    .header-aside { flex-shrink: 0; display: flex; align-items: center; }
+    @media (min-width: 768px) {
+      .header { min-height: 74px; padding: 12px 18px; }
+      .brand { height: 64px; }
+      .header-sub { font-size: 12px; max-width: 44%; }
+    }
+    @media (min-width: 1024px) {
+      .brand { height: 70px; }
+    }
+    @media (min-width: 1280px) {
+      .brand { height: 74px; }
+    }
+    .steps { background: var(--navy-mid); display: flex; height: 3px; }
+    .step-bar { height: 100%; background: #4f46e5; width: 100%; }
+    .container { max-width: 480px; margin: 0 auto; padding: 32px 20px 60px; }
+    .page-title { font-family: 'DM Serif Display', serif; font-size: 26px; color: var(--text); margin-bottom: 6px; }
+    .page-sub { font-size: 14px; color: var(--text-muted); margin-bottom: 28px; line-height: 1.6; }
+    .step-label { font-size: 11px; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; }
+    .card { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 16px; }
+    .section-label { font-size: 11px; font-weight: 500; letter-spacing: 0.8px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+    .field { margin-bottom: 16px; }
+    .field:last-child { margin-bottom: 0; }
+    .field label { display: block; font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 6px; }
+    .req { color: var(--danger); font-weight: 600; margin-left: 3px; }
+    .field input, .field select {
+      width: 100%; padding: 11px 14px; border: 1px solid var(--border); border-radius: 8px;
+      font-size: 15px; font-family: 'DM Sans', sans-serif; color: var(--text);
+      background: var(--white); transition: border-color 0.15s; -webkit-appearance: none;
+    }
+    .field input:focus, .field select:focus { outline: none; border-color: var(--accent); }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .upload-zone {
+      border: 1.5px dashed var(--border); border-radius: 8px; padding: 20px;
+      text-align: center; cursor: pointer; transition: border-color 0.15s, background 0.15s;
+      background: var(--bg);
+    }
+    .upload-zone:hover { border-color: var(--accent); background: #f0f0fe; }
+    .upload-zone.has-file { border-color: var(--success); background: #f0fdf4; }
+    .upload-zone input[type=file] { display: none; }
+    .upload-label { font-size: 13px; color: var(--text-muted); margin-top: 6px; }
+    .upload-icon { font-size: 24px; color: var(--text-muted); margin-bottom: 6px; }
+    .upload-filename { font-size: 12px; color: var(--success); font-weight: 500; margin-top: 4px; }
+    .preview-img { width: 100%; max-height: 180px; object-fit: cover; border-radius: 6px; margin-top: 10px; display: none; }
+    .tc-block { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 20px 24px; margin-bottom: 20px; }
+    .tc-row { display: flex; align-items: flex-start; gap: 12px; }
+    .tc-row input[type=checkbox] { width: 18px; height: 18px; min-width: 18px; margin-top: 1px; accent-color: var(--accent); }
+    .tc-row span { font-size: 13px; color: var(--text-muted); line-height: 1.6; }
+    .tc-row a { color: var(--accent); text-decoration: none; font-weight: 500; }
+    .btn-primary { width: 100%; padding: 15px; background: var(--navy); color: #fff; border: none; border-radius: 8px; font-size: 15px; font-weight: 500; font-family: 'DM Sans', sans-serif; cursor: pointer; transition: background 0.15s, opacity 0.15s; }
+    .btn-primary:hover { background: #0f0f22; }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .alert { padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; display: none; }
+    .alert.error { background: #fee2e2; color: #991b1b; display: block; }
+    .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; margin-right: 8px; vertical-align: middle; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .progress-text { font-size: 13px; color: var(--text-muted); text-align: center; margin-top: 8px; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="left">
+    <button class="back" onclick="goBack()" aria-label="Volver">←</button>
+    <span class="brand" onclick="goHome()"><img src="/logo-pago-nacional.png?v=5" alt="Pago Nacional" width="1063" height="378" decoding="async" /></span>
+  </div>
+  <div class="header-aside">
+    <span class="header-sub">Sistema de cambio de echeqs</span>
+  </div>
+</div>
+<div class="steps"><div class="step-bar"></div></div>
+
+<div class="container">
+  <h1 class="page-title">Nueva solicitud</h1>
+  <p class="page-sub">Completa los datos del echeq y adjunta las fotos de tu documento para procesar el cambio.</p>
+
+  <div id="alert" class="alert"></div>
+
+  <form id="form-solicitud" novalidate onsubmit="event.preventDefault(); enviarSolicitud();">
+  <div class="card">
+    <div class="section-label">Datos bancarios</div>
+    <div class="field">
+      <label>CBU / CVU<span class="req" aria-hidden="true">*</span> <span style="font-weight:400;color:var(--text-muted)">(22 dígitos)</span></label>
+      <input type="text" id="cbu" name="cbu" placeholder="0000003100012345678901" inputmode="numeric" maxlength="22" required autocomplete="off" />
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-label">Datos del echeq</div>
+    <div class="field">
+      <label>N° de echeq<span class="req" aria-hidden="true">*</span></label>
+      <input type="text" id="numero_echeq" name="numero_echeq" placeholder="00012345" inputmode="numeric" required autocomplete="off" />
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Monto<span class="req" aria-hidden="true">*</span></label>
+        <input type="number" id="monto" name="monto" placeholder="250000" inputmode="decimal" min="0.01" step="any" required />
+      </div>
+      <div class="field">
+        <label>Fecha de vencimiento<span class="req" aria-hidden="true">*</span></label>
+        <input type="date" id="vencimiento" name="vencimiento" required />
+      </div>
+    </div>
+    <div class="field">
+      <label>Banco emisor<span class="req" aria-hidden="true">*</span></label>
+      <select id="banco" name="banco" required>
+        <option value="" disabled selected>Seleccionar banco…</option>
+        <option>Banco Nacion</option>
+        <option>Banco Galicia</option>
+        <option>Banco Santander</option>
+        <option>Banco BBVA</option>
+        <option>Banco Macro</option>
+        <option>Banco HSBC</option>
+        <option>Banco Patagonia</option>
+        <option>Banco Ciudad</option>
+        <option>Banco Provincia</option>
+        <option>Brubank</option>
+        <option>Mercado Pago</option>
+        <option>Naranja X</option>
+        <option>Otro</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-label">Documentación</div>
+    <p class="page-sub" style="margin-top:-8px;margin-bottom:16px;font-size:13px;">
+      Las fotos del DNI se cargan desde tu cuenta si ya las subiste en un envío anterior. Podés reemplazarlas tocando cada recuadro.
+    </p>
+    <div class="field">
+      <label>DNI — frente<span class="req" aria-hidden="true">*</span></label>
+      <div class="upload-zone" id="zone-frente" onclick="document.getElementById('file-frente').click()">
+        <div class="upload-icon">[ ]</div>
+        <div class="upload-label">Toca para sacar foto o subir imagen</div>
+        <div class="upload-filename" id="name-frente"></div>
+        <img class="preview-img" id="preview-frente" />
+        <input type="file" id="file-frente" accept="image/*" capture="environment" onchange="previewFile(this,'frente')" />
+      </div>
+    </div>
+    <div class="field" style="margin-bottom:0">
+      <label>DNI — dorso<span class="req" aria-hidden="true">*</span></label>
+      <div class="upload-zone" id="zone-dorso" onclick="document.getElementById('file-dorso').click()">
+        <div class="upload-icon">[ ]</div>
+        <div class="upload-label">Toca para sacar foto o subir imagen</div>
+        <div class="upload-filename" id="name-dorso"></div>
+        <img class="preview-img" id="preview-dorso" />
+        <input type="file" id="file-dorso" accept="image/*" capture="environment" onchange="previewFile(this,'dorso')" />
+      </div>
+    </div>
+  </div>
+
+  <div class="tc-block">
+    <div class="tc-row">
+      <input type="checkbox" id="tc" name="tc" required />
+      <span>Acepto los <a href="#" id="link-terminos" onclick="abrirTerminos(event)">Terminos y Condiciones</a> del cambio de echeq y declaro que los datos informados son correctos</span>
+    </div>
+  </div>
+
+  <button class="btn-primary" type="submit" id="btn-enviar">
+    Enviar solicitud
+  </button>
+  <div class="progress-text" id="progress-text"></div>
+  </form>
+</div>
+
+<script type="module">
+  import { crearSolicitud, subirImagenCloudinary, obtenerCamioneroPorEmail, actualizarDniFotosCamionero } from '../lib/supabase.js'
+  import { enviarConfirmacionSolicitud, enviarNotificacionAdmin } from '../lib/emails.js'
+  import { datosPrestamistaParaTerminos } from '../lib/terminosEmpresa.js'
+
+  const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL
+  const IS_LOCAL_DB =
+    !import.meta.env.VITE_SUPABASE_URL ||
+    String(import.meta.env.VITE_SUPABASE_URL).includes('xxxxxxxx')
+
+  const formEl = document.getElementById('form-solicitud')
+  let defaultDniFrenteUrl = ''
+  let defaultDniDorsoUrl = ''
+
+  function setDniZoneFromUrl(lado, url, labelText) {
+    if (!url) return
+    const zone = document.getElementById(`zone-${lado}`)
+    const name = document.getElementById(`name-${lado}`)
+    const preview = document.getElementById(`preview-${lado}`)
+    zone.classList.add('has-file')
+    name.textContent = labelText
+    preview.src = url
+    preview.style.display = 'block'
+  }
+
+  async function initSolicitud() {
+    const camionero_id = sessionStorage.getItem('camionero_id')
+    const email = sessionStorage.getItem('camionero_email')
+    if (!camionero_id || !email) {
+      window.location.href = '/src/pages/login.html'
+      return
+    }
+    try {
+      const c = await obtenerCamioneroPorEmail(email)
+      defaultDniFrenteUrl = String(c.dni_frente_url || '').trim()
+      defaultDniDorsoUrl = String(c.dni_dorso_url || '').trim()
+      const savedCbu = String(c.cbu_cvu || '').replace(/\D/g, '').slice(0, 22)
+      if (savedCbu.length === 22) {
+        const cbuEl = document.getElementById('cbu')
+        if (cbuEl && !String(cbuEl.value || '').replace(/\D/g, '').length) cbuEl.value = savedCbu
+      }
+      const hint = 'Foto de tu cuenta — tocá para cambiarla'
+      setDniZoneFromUrl('frente', defaultDniFrenteUrl, hint)
+      setDniZoneFromUrl('dorso', defaultDniDorsoUrl, hint)
+    } catch (e) {
+      console.warn(e)
+    }
+  }
+  initSolicitud()
+
+  window.abrirTerminos = function(event) {
+    event.preventDefault()
+    const monto = document.getElementById('monto').value.trim()
+    if (monto) sessionStorage.setItem('ultimo_monto_solicitud', monto)
+    const query = new URLSearchParams({ monto: monto || sessionStorage.getItem('ultimo_monto_solicitud') || '' })
+    window.open(`/src/pages/terminos.html?${query.toString()}`, '_blank')
+  }
+
+  window.goHome = () => { window.location.href = '/src/pages/home.html' }
+  window.goBack = () => {
+    if (history.length > 1) history.back()
+    else window.location.href = '/src/pages/home.html'
+  }
+
+  window.previewFile = function(input, lado) {
+    const file = input.files[0]
+    if (!file) return
+    const zone = document.getElementById(`zone-${lado}`)
+    const name = document.getElementById(`name-${lado}`)
+    const preview = document.getElementById(`preview-${lado}`)
+    zone.classList.add('has-file')
+    name.textContent = file.name
+    const reader = new FileReader()
+    reader.onload = e => { preview.src = e.target.result; preview.style.display = 'block' }
+    reader.readAsDataURL(file)
+  }
+
+  window.enviarSolicitud = async function() {
+    const alertEl      = document.getElementById('alert')
+    const progressEl   = document.getElementById('progress-text')
+
+    alertEl.className = 'alert'
+    alertEl.textContent = ''
+
+    if (!formEl.checkValidity()) {
+      formEl.reportValidity()
+      return
+    }
+
+    const cbuRaw       = document.getElementById('cbu').value.trim()
+    const cbu          = cbuRaw.replace(/\D/g, '')
+    const numero_echeq = document.getElementById('numero_echeq').value.trim()
+    const monto        = document.getElementById('monto').value.trim()
+    const vencimiento  = document.getElementById('vencimiento').value
+    const banco        = document.getElementById('banco').value
+    const fileFrente   = document.getElementById('file-frente').files[0]
+    const fileDorso    = document.getElementById('file-dorso').files[0]
+
+    if (cbu.length !== 22) {
+      alertEl.className = 'alert error'
+      alertEl.textContent = 'El CBU / CVU debe tener exactamente 22 dígitos.'
+      return
+    }
+    const montoNum = parseFloat(monto.replace(',', '.'))
+    if (!Number.isFinite(montoNum) || montoNum <= 0) {
+      alertEl.className = 'alert error'
+      alertEl.textContent = 'Ingresá un monto válido mayor a cero.'
+      return
+    }
+    if (!numero_echeq) {
+      alertEl.className = 'alert error'
+      alertEl.textContent = 'Tenés que ingresar el número de echeq.'
+      return
+    }
+
+    const srcFrente = fileFrente ? 'file' : defaultDniFrenteUrl
+    const srcDorso  = fileDorso ? 'file' : defaultDniDorsoUrl
+    if (!srcFrente || !srcDorso) {
+      alertEl.className = 'alert error'
+      alertEl.textContent = 'Tenés que cargar el frente y el dorso del DNI (o tenerlas ya guardadas en tu cuenta).'
+      return
+    }
+
+    const camionero_id = sessionStorage.getItem('camionero_id')
+    if (!camionero_id) {
+      window.location.href = '/src/pages/login.html'
+      return
+    }
+
+    const btn = document.getElementById('btn-enviar')
+    btn.disabled = true
+
+    try {
+      const isCloudinaryConfigured =
+        !!import.meta.env.VITE_CLOUDINARY_CLOUD_NAME &&
+        !!import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET &&
+        !String(import.meta.env.VITE_CLOUDINARY_CLOUD_NAME).includes('tu_cloud_name')
+
+      async function toDataUrl(file) {
+        return await new Promise((resolve, reject) => {
+          const r = new FileReader()
+          r.onload = () => resolve(String(r.result || ''))
+          r.onerror = () => reject(new Error('No se pudo leer la imagen.'))
+          r.readAsDataURL(file)
+        })
+      }
+
+      let dniFrente = ''
+      let dniDorso = ''
+      const uploadSteps =
+        (isCloudinaryConfigured ? (fileFrente ? 1 : 0) + (fileDorso ? 1 : 0) : (fileFrente ? 1 : 0) + (fileDorso ? 1 : 0))
+      let step = 0
+
+      async function resolveDniSide(file, defaultUrl, lado) {
+        if (file) {
+          step += 1
+          if (isCloudinaryConfigured) {
+            btn.innerHTML = `<span class="spinner"></span>Subiendo ${lado} del DNI...`
+            progressEl.textContent = uploadSteps ? `${step} de ${uploadSteps + 1} — Subiendo imagen...` : 'Subiendo imagen...'
+            return await subirImagenCloudinary(file, 'dni')
+          }
+          btn.innerHTML = `<span class="spinner"></span>Guardando ${lado}...`
+          progressEl.textContent = uploadSteps ? `${step} de ${uploadSteps + 1} — Guardando imagen...` : 'Guardando imagen...'
+          return await toDataUrl(file)
+        }
+        return defaultUrl
+      }
+
+      dniFrente = await resolveDniSide(fileFrente, defaultDniFrenteUrl, 'frente')
+      dniDorso = await resolveDniSide(fileDorso, defaultDniDorsoUrl, 'dorso')
+
+      btn.innerHTML = '<span class="spinner"></span>Guardando solicitud...'
+      progressEl.textContent =
+        uploadSteps > 0 ? `${uploadSteps + 1} de ${uploadSteps + 1} — Guardando solicitud...` : 'Guardando solicitud...'
+
+      // Snapshot de T&C por solicitud (modo local): cada envío guarda su propio documento aceptado.
+      const nowIso = new Date().toISOString()
+      const { nombre: prestamistaNombre, cuit: prestamistaCuit, domicilio: prestamistaDom } =
+        datosPrestamistaParaTerminos()
+
+      const email  = sessionStorage.getItem('camionero_email') || ''
+      const nombre = sessionStorage.getItem('camionero_nombre') || ''
+      let camionero = null
+      try { camionero = email ? await obtenerCamioneroPorEmail(email) : null } catch { /* noop */ }
+
+      const deudorNombre = (`${camionero?.nombre || ''} ${camionero?.apellido || ''}`.trim()) || nombre
+      const deudorDni = camionero?.dni || ''
+      const deudorDom = camionero?.domicilio || 'NO INFORMADO'
+      const montoFmt = montoNum.toLocaleString('es-AR', { maximumFractionDigits: 2 })
+
+      const terminosHtml = `<!doctype html><html lang="es"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Términos y Condiciones — ${prestamistaNombre}</title><style>body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;padding:24px;line-height:1.72;max-width:980px;margin:0 auto;color:#111827}p{margin:0 0 14px;text-align:justify}.muted{color:#6b7280;margin:0 0 16px}</style></head><body><h2>Contrato de mutuo dinerario con reconocimiento de deuda</h2><div class="muted">Aceptado digitalmente el ${new Date(nowIso).toLocaleString('es-AR')}.</div><p>En la Ciudad Autónoma de Buenos Aires, a los ${new Date(nowIso).getDate()} días del mes de ${new Date(nowIso).toLocaleString('es-AR', { month: 'long' })} de ${new Date(nowIso).getFullYear()}, entre ${prestamistaNombre}, CUIT Nº ${prestamistaCuit}, con domicilio en ${prestamistaDom}, en adelante denominado indistintamente “EL PRESTAMISTA” o “EL ACREEDOR”, por una parte, y por la otra el/la Sr./Sra. ${deudorNombre || '[NOMBRE COMPLETO DEL DEUDOR]'}, DNI Nº ${deudorDni || '__________'}, con domicilio real en ${deudorDom}, en adelante denominado “EL DEUDOR”, se celebra el presente contrato de mutuo dinerario con reconocimiento expreso de deuda, carácter ejecutivo, suscripción de pagaré y cláusulas de ejecución, sujeto a las siguientes condiciones:</p><p>EL PRESTAMISTA otorga en carácter de mutuo dinerario a favor de EL DEUDOR una suma de dinero en pesos argentinos, cuyo monto será el que el DEUDOR hubiera solicitado, declarado y confirmado mediante el formulario digital dispuesto por EL PRESTAMISTA, el cual el DEUDOR manifiesta haber completado en forma libre, voluntaria, consciente e informada, reconociendo que dicha solicitud constituye oferta válida, vinculante e irrevocable.</p><p>El contrato se considerará perfeccionado en el momento en que EL PRESTAMISTA efectúe la transferencia del monto solicitado a la cuenta bancaria o virtual (CBU/CVU) denunciada por EL DEUDOR en el formulario digital, constituyendo dicha transferencia prueba plena, suficiente e irrefutable de la entrega del capital, sirviendo el comprobante electrónico como recibo válido, renunciando EL DEUDOR a cualquier impugnación posterior relativa a la efectiva percepción de los fondos.</p><p>EL DEUDOR reconoce en forma expresa, irrevocable, incondicional y sin reservas adeudar a EL PRESTAMISTA la suma de pesos ${montoFmt} ($${montoFmt}), obligándose a su restitución conforme los términos, plazos, modalidades y condiciones establecidos en la confirmación digital del préstamo, la cual integra el presente contrato a todos sus efectos legales.</p><p>El presente instrumento reviste el carácter de reconocimiento de deuda líquida, exigible y ejecutable, otorgando a EL PRESTAMISTA acción ejecutiva directa para su cobro, bastando su sola presentación para la promoción de la correspondiente demanda judicial.</p><p>En este acto, y como garantía adicional e independiente, EL DEUDOR suscribe un PAGARÉ SIN PROTESTO a favor de EL PRESTAMISTA por el monto total adeudado, autorizando expresamente a EL PRESTAMISTA a completar los datos faltantes conforme a las condiciones pactadas, reconociendo la plena validez, exigibilidad y ejecutividad del mismo, aun cuando el mismo haya sido suscripto mediante mecanismos electrónicos.</p><p>EL DEUDOR se obliga a cumplir estrictamente con los vencimientos pactados, estableciéndose que la mora se producirá en forma automática y de pleno derecho por el solo vencimiento de cualquier obligación, sin necesidad de interpelación judicial o extrajudicial.</p><p>En caso de mora, EL DEUDOR deberá abonar un interés punitorio equivalente al UNO POR CIENTO (1%) diario sobre el saldo total adeudado, el cual se devengará automáticamente y podrá capitalizarse hasta la efectiva cancelación de la deuda, sin perjuicio de otros intereses, gastos y accesorios que pudieran corresponder.</p><p>El incumplimiento de cualquiera de las obligaciones asumidas producirá la caducidad automática de todos los plazos, tornándose inmediatamente exigible la totalidad del capital adeudado con más sus intereses y accesorios.</p><p>EL DEUDOR autoriza en forma expresa, irrevocable e ilimitada a EL PRESTAMISTA a consultar, verificar, almacenar y compartir su información crediticia en bases de datos públicas y privadas, así como a informar su incumplimiento a centrales de riesgo, entidades financieras, comerciales y/o terceros, y a realizar gestiones de cobro por sí o por terceros, mediante cualquier medio, incluyendo contacto telefónico, digital o presencial.</p><p>Todo pago efectuado será imputado en primer término a gastos, luego a intereses y finalmente a capital, aun en contra de la voluntad del DEUDOR.</p><p>Todos los gastos, costos, comisiones, honorarios profesionales, tasas judiciales y extrajudiciales y cualquier otro concepto derivado de la gestión de cobro serán íntegramente a cargo del DEUDOR.</p><p>El DEUDOR renuncia expresamente a oponer excepciones dilatorias, defensas improcedentes, beneficios procesales, así como a invocar teorías tales como imprevisión, lesión o abuso del derecho, en la medida permitida por la legislación vigente.</p><p>El DEUDOR reconoce y acepta que la aceptación del presente contrato mediante medios electrónicos tendrá plena validez jurídica, obligatoria y ejecutable, equiparable a la firma manuscrita, en los términos de la legislación vigente en la República Argentina, incluyendo pero no limitado a la Ley de Firma Digital N° 25.506 y normativa complementaria.</p><p>A tal efecto, se considerará firma electrónica válida la aceptación mediante el sitio web de EL PRESTAMISTA, incluyendo la carga de datos personales, confirmación del préstamo, validación mediante código SMS, correo electrónico, dirección IP, geolocalización, dispositivo utilizado y cualquier otro mecanismo tecnológico que permita identificar inequívocamente al DEUDOR, quien reconoce expresamente que dichos elementos constituyen prueba suficiente de su consentimiento, autoría y voluntad de obligarse en los términos del presente.</p><p>En caso de incumplimiento total o parcial de las obligaciones asumidas, EL PRESTAMISTA quedará facultado, a su exclusivo criterio y sin necesidad de notificación previa, para proceder a la ejecución inmediata del pagaré suscripto, por la totalidad de la suma adeudada, incluyendo capital, intereses, gastos y accesorios, pudiendo iniciar las acciones judiciales ejecutivas correspondientes y solicitar todas las medidas cautelares que resulten procedentes, incluyendo embargos preventivos y/o ejecutivos sobre cuentas bancarias, billeteras virtuales, ingresos, bienes muebles, inmuebles y cualquier otro activo del DEUDOR, así como la inhibición general de bienes y la eventual subasta judicial de los mismos hasta lograr el recupero total del crédito.</p><p>El DEUDOR acepta en forma expresa, irrevocable e incondicional que, ante cualquier incumplimiento, EL PRESTAMISTA podrá iniciar directamente juicio ejecutivo, reconociendo la plena legitimidad del título y del procedimiento, renunciando a cualquier oposición que tienda a dilatar el cobro.</p><p>A todos los efectos legales derivados del presente contrato, su interpretación, cumplimiento y ejecución, las partes acuerdan someterse de manera expresa, exclusiva y excluyente a la jurisdicción de los tribunales ordinarios de la Ciudad Autónoma de Buenos Aires, renunciando a cualquier otro fuero o jurisdicción que pudiera corresponder, incluso el del domicilio presente o futuro del DEUDOR, aceptando que toda acción judicial deberá iniciarse y tramitarse exclusivamente en dicha jurisdicción.</p><p>En prueba de conformidad, se firman dos ejemplares de un mismo tenor y a un solo efecto, en el lugar y fecha indicados al inicio.</p></body></html>`
+
+      const solicitud = await crearSolicitud({
+        camionero_id,
+        cbu_cvu: cbu,
+        numero_echeq,
+        monto: montoNum,
+        banco_emisor: banco,
+        fecha_vencimiento: vencimiento,
+        dni_frente_url: dniFrente,
+        dni_dorso_url: dniDorso,
+        tc_aceptado: true,
+        ...(IS_LOCAL_DB ? { terminos_html: terminosHtml, terminos_aceptados_at: nowIso } : {}),
+      })
+
+      // Emails: en local pueden fallar (Resend no configurado). No bloqueamos el flujo.
+      await Promise.allSettled([
+        enviarConfirmacionSolicitud(email, nombre, solicitud),
+        enviarNotificacionAdmin(ADMIN_EMAIL, solicitud, { nombre, email, dni: '', cuit: '', celular: '' })
+      ])
+
+      try {
+        await actualizarDniFotosCamionero(camionero_id, { dni_frente_url: dniFrente, dni_dorso_url: dniDorso })
+        defaultDniFrenteUrl = dniFrente
+        defaultDniDorsoUrl = dniDorso
+      } catch (e) {
+        console.warn('No se pudo actualizar las fotos de DNI en el perfil:', e)
+      }
+
+      window.location.href = `/src/pages/confirmacion.html?num=${solicitud.numero}`
+    } catch (err) {
+      console.error(err)
+      alertEl.className = 'alert error'
+      alertEl.textContent = err?.message || 'Ocurrio un error al enviar tu solicitud. Intenta de nuevo.'
+      btn.disabled = false
+      btn.textContent = 'Enviar solicitud'
+      progressEl.textContent = ''
+    }
+  }
+</script>
+
+</body>
+</html>
