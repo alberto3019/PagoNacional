@@ -11,7 +11,7 @@ function getFromEmail() {
     if (raw.includes('<')) return raw
     return `Pago Nacional <${raw}>`
   }
-  return 'Pago Nacional <notificaciones@pagonacional.com.ar>'
+  return 'Pago Nacional <administracion@pagonacional.com>'
 }
 
 const FROM_EMAIL = getFromEmail()
