@@ -12,6 +12,8 @@ ALTER TABLE solicitudes ADD COLUMN IF NOT EXISTS cuenta_destino_cvu TEXT;
 ALTER TABLE solicitudes ADD COLUMN IF NOT EXISTS cuenta_destino_banco TEXT;
 ALTER TABLE solicitudes ADD COLUMN IF NOT EXISTS terminos_html TEXT;
 ALTER TABLE solicitudes ADD COLUMN IF NOT EXISTS terminos_aceptados_at TIMESTAMPTZ;
+ALTER TABLE solicitudes ADD COLUMN IF NOT EXISTS cuenta_destino_cuit TEXT;
+ALTER TABLE solicitudes ADD COLUMN IF NOT EXISTS cuenta_destino_librador TEXT;
 
 CREATE TABLE IF NOT EXISTS prestamista_config (
   id SMALLINT PRIMARY KEY DEFAULT 1 CHECK (id = 1),
@@ -31,12 +33,15 @@ CREATE TABLE IF NOT EXISTS cuentas_destino (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   alias TEXT NOT NULL,
   titular TEXT NOT NULL,
-  cbu TEXT,
-  cvu TEXT,
+  cuit TEXT,
+  librador TEXT,
   banco TEXT,
   activa BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+ALTER TABLE cuentas_destino ADD COLUMN IF NOT EXISTS cuit TEXT;
+ALTER TABLE cuentas_destino ADD COLUMN IF NOT EXISTS librador TEXT;
 
 ALTER TABLE cuentas_destino ENABLE ROW LEVEL SECURITY;
 

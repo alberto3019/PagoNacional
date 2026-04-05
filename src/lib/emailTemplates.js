@@ -198,14 +198,15 @@ function buildAprobacion(baseUrl, { email, nombre, solicitud, cuenta, attachment
   const innerHtml = `
     <h2 style="font-size:22px;font-weight:600;margin:0 0 12px 0;">Tu solicitud fue aprobada</h2>
     <p style="font-size:15px;line-height:1.7;color:#4b5563;margin:0 0 20px 0;">
-      Hola ${escapeHtml(nombre || '')}, enviá el echeq a la cuenta asignada para continuar con la operación.
+      Hola ${escapeHtml(nombre || '')}, tu solicitud fue aprobada. Endosá o enviá el echeq según el <strong>CUIT</strong> y <strong>librador</strong> asignados.
     </p>
     <div style="background:#f7f7f5;border-radius:10px;padding:18px 20px;margin:0 0 16px 0;">
       <table style="width:100%;font-size:14px;border-collapse:collapse;">
         <tr><td style="color:#6b7280;padding:6px 0;">N° solicitud</td><td style="text-align:right;font-weight:600;">${escapeHtml(solicitud.numero)}</td></tr>
         <tr><td style="color:#6b7280;padding:6px 0;">Titular</td><td style="text-align:right;font-weight:600;">${escapeHtml(cuenta?.titular || '-')}</td></tr>
         <tr><td style="color:#6b7280;padding:6px 0;">Alias</td><td style="text-align:right;font-weight:600;">${escapeHtml(cuenta?.alias || '-')}</td></tr>
-        <tr><td style="color:#6b7280;padding:6px 0;">CBU/CVU</td><td style="text-align:right;font-weight:600;font-size:12px;">${escapeHtml(cuenta?.cvu || cuenta?.cbu || '-')}</td></tr>
+        <tr><td style="color:#6b7280;padding:6px 0;">CUIT</td><td style="text-align:right;font-weight:600;font-size:12px;">${escapeHtml(cuenta?.cuit || '-')}</td></tr>
+        <tr><td style="color:#6b7280;padding:6px 0;">Librador</td><td style="text-align:right;font-weight:600;">${escapeHtml(cuenta?.librador || '-')}</td></tr>
         <tr><td style="color:#6b7280;padding:6px 0;">Banco</td><td style="text-align:right;font-weight:600;">${escapeHtml(cuenta?.banco || '-')}</td></tr>
       </table>
     </div>

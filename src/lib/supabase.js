@@ -262,7 +262,9 @@ export async function aprobarSolicitudConCuenta(solicitudId, cuenta) {
       cuenta_destino_id: cuenta?.id || null,
       cuenta_destino_alias: cuenta?.alias || null,
       cuenta_destino_titular: cuenta?.titular || null,
-      cuenta_destino_cvu: cuenta?.cvu || cuenta?.cbu || null,
+      cuenta_destino_cvu: null,
+      cuenta_destino_cuit: cuenta?.cuit || null,
+      cuenta_destino_librador: cuenta?.librador || null,
       cuenta_destino_banco: cuenta?.banco || null,
     })
     .eq('id', solicitudId)
@@ -282,17 +284,24 @@ export async function listarCuentasDestino() {
   return data
 }
 
+function normalizarCuit(cuit) {
+  return String(cuit ?? '')
+    .replace(/\D/g, '')
+    .slice(0, 11)
+}
+
 function validarDatosCuentaDestino(datos) {
   const titular = String(datos?.titular ?? '').trim()
   const alias = String(datos?.alias ?? '').trim()
-  const cbu = String(datos?.cbu ?? '').trim()
-  const cvu = String(datos?.cvu ?? '').trim()
+  const cuit = normalizarCuit(datos?.cuit)
+  const librador = String(datos?.librador ?? '').trim()
   const banco = String(datos?.banco ?? '').trim()
   if (!titular) throw new Error('El titular es obligatorio.')
   if (!alias) throw new Error('El alias es obligatorio.')
   if (!banco) throw new Error('El banco es obligatorio.')
-  if (!cbu && !cvu) throw new Error('Debés ingresar al menos un CBU o un CVU.')
-  return { titular, alias, cbu, cvu, banco }
+  if (cuit.length !== 11) throw new Error('El CUIT debe tener 11 dígitos.')
+  if (!librador) throw new Error('El librador es obligatorio.')
+  return { titular, alias, cuit, librador, banco }
 }
 
 export async function crearCuentaDestino(datos) {
@@ -321,8 +330,8 @@ export async function actualizarCuentaDestino(cuentaId, datos) {
   const payload = {
     alias: v.alias,
     titular: v.titular,
-    cbu: v.cbu || null,
-    cvu: v.cvu || null,
+    cuit: v.cuit,
+    librador: v.librador,
     banco: v.banco || null,
   }
   const { data, error } = await supabase

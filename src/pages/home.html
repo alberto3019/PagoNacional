@@ -340,7 +340,8 @@
               <th>Monto</th>
               <th>Titular</th>
               <th>Alias</th>
-              <th>CBU / CVU</th>
+              <th>CUIT</th>
+              <th>Librador</th>
               <th>Banco cuenta</th>
               <th>Banco echeq</th>
               <th>Estado</th>
@@ -363,15 +364,17 @@
   <div class="cuenta-overlay" id="cuenta-overlay" onclick="if(event.target===this)cerrarModalCuenta()">
     <div class="cuenta-modal" onclick="event.stopPropagation()">
       <div class="cuenta-modal-head">
-        <h2 id="cuenta-modal-title">Cuenta destino</h2>
+        <h2 id="cuenta-modal-title">Asignación echeq</h2>
         <button type="button" class="cuenta-modal-close" onclick="cerrarModalCuenta()" aria-label="Cerrar">×</button>
       </div>
       <div class="cuenta-modal-body">
-        <p class="sub" style="margin-bottom:16px;font-size:13px;">Datos para transferir el monto aprobado.</p>
+        <p class="sub" style="margin-bottom:16px;font-size:13px;">CUIT y librador asignados para el echeq (aprobación).</p>
         <dl class="cuenta-dl">
           <div><dt>Titular</dt><dd id="cd-titular">—</dd></div>
           <div><dt>Alias</dt><dd id="cd-alias" class="mono">—</dd></div>
-          <div><dt>CBU / CVU</dt><dd id="cd-cbu" class="mono">—</dd></div>
+          <div><dt>CUIT</dt><dd id="cd-cuit" class="mono">—</dd></div>
+          <div><dt>Librador</dt><dd id="cd-librador">—</dd></div>
+          <div id="cd-legacy-row" style="display:none"><dt>Ref. anterior</dt><dd id="cd-legacy" class="mono">—</dd></div>
           <div><dt>Banco</dt><dd id="cd-banco">—</dd></div>
         </dl>
       </div>
@@ -398,10 +401,12 @@
     function cuentaDestinoFields(s) {
       const titular = String(s.cuenta_destino_titular || '').trim()
       const alias = String(s.cuenta_destino_alias || '').trim()
-      const cbu = String(s.cuenta_destino_cvu || '').trim()
+      const cuit = String(s.cuenta_destino_cuit || '').trim()
+      const librador = String(s.cuenta_destino_librador || '').trim()
+      const legacyCvu = String(s.cuenta_destino_cvu || '').trim()
       const bancoCta = String(s.cuenta_destino_banco || '').trim()
-      const has = !!(titular || alias || cbu || bancoCta)
-      return { titular, alias, cbu, bancoCta, has }
+      const has = !!(titular || alias || cuit || librador || legacyCvu || bancoCta)
+      return { titular, alias, cuit, librador, legacyCvu, bancoCta, has }
     }
 
     function dash(v) {
@@ -413,13 +418,19 @@
     window.verCuentaDestino = function(id) {
       const s = window._homeSolicitudesCache.find(x => x.id === id)
       if (!s) return
-      const { titular, alias, cbu, bancoCta, has } = cuentaDestinoFields(s)
+      const { titular, alias, cuit, librador, legacyCvu, bancoCta, has } = cuentaDestinoFields(s)
       if (!has) return
       document.getElementById('cuenta-modal-title').textContent =
-        `Cuenta destino · ${s.numero || ''}`
+        `Asignación echeq · ${s.numero || ''}`
       document.getElementById('cd-titular').textContent = dash(titular)
       document.getElementById('cd-alias').textContent = dash(alias)
-      document.getElementById('cd-cbu').textContent = dash(cbu)
+      document.getElementById('cd-cuit').textContent = dash(cuit)
+      document.getElementById('cd-librador').textContent = dash(librador)
+      const legRow = document.getElementById('cd-legacy-row')
+      const legEl = document.getElementById('cd-legacy')
+      const showLegacy = !!legacyCvu && !cuit
+      legRow.style.display = showLegacy ? 'grid' : 'none'
+      legEl.textContent = showLegacy ? legacyCvu : '—'
       document.getElementById('cd-banco').textContent = dash(bancoCta)
       document.getElementById('cuenta-overlay').classList.add('open')
       document.body.style.overflow = 'hidden'
@@ -464,7 +475,8 @@
             <div class="sol-row"><dt>Monto</dt><dd>${monto}</dd></div>
             <div class="sol-row"><dt>Titular</dt><dd>${dash(cd.titular)}</dd></div>
             <div class="sol-row"><dt>Alias</dt><dd class="mono">${dash(cd.alias)}</dd></div>
-            <div class="sol-row"><dt>CBU / CVU</dt><dd class="mono">${dash(cd.cbu)}</dd></div>
+            <div class="sol-row"><dt>CUIT</dt><dd class="mono">${dash(cd.cuit)}</dd></div>
+            <div class="sol-row"><dt>Librador</dt><dd>${dash(cd.librador)}</dd></div>
             <div class="sol-row"><dt>Banco cuenta</dt><dd>${dash(cd.bancoCta)}</dd></div>
             <div class="sol-row"><dt>Banco echeq</dt><dd>${s.banco_emisor}</dd></div>
             <div class="sol-row"><dt>Fecha</dt><dd>${fecha}</dd></div>
@@ -523,7 +535,8 @@
               <td>$${Number(s.monto || 0).toLocaleString('es-AR')}</td>
               <td>${dash(cd.titular)}</td>
               <td class="mono">${dash(cd.alias)}</td>
-              <td class="mono">${dash(cd.cbu)}</td>
+              <td class="mono">${dash(cd.cuit)}</td>
+              <td>${dash(cd.librador)}</td>
               <td>${dash(cd.bancoCta)}</td>
               <td>${s.banco_emisor}</td>
               <td><span class="badge ${cls}">${s.estado}</span></td>

@@ -11,7 +11,9 @@ export function exportarSolicitudes(solicitudes, nombreArchivo = 'pago-nacional-
     'CUIT':           s.camioneros?.cuit || '',
     'Email':          s.camioneros?.email || '',
     'Celular':        s.camioneros?.celular || '',
-    'CBU/CVU':        s.cbu_cvu,
+    'CBU/CVU solicitud': s.cbu_cvu,
+    'CUIT cuenta asignada': s.cuenta_destino_cuit || '',
+    'Librador cuenta':    s.cuenta_destino_librador || '',
     'Monto':          s.monto,
     'Banco emisor':   s.banco_emisor,
     'Vencimiento':    s.fecha_vencimiento,
@@ -25,8 +27,8 @@ export function exportarSolicitudes(solicitudes, nombreArchivo = 'pago-nacional-
   ws['!cols'] = [
     { wch: 18 }, { wch: 16 }, { wch: 16 }, { wch: 16 },
     { wch: 14 }, { wch: 18 }, { wch: 26 }, { wch: 18 },
-    { wch: 26 }, { wch: 14 }, { wch: 16 }, { wch: 14 },
-    { wch: 12 }, { wch: 18 },
+    { wch: 22 }, { wch: 14 }, { wch: 20 }, { wch: 14 },
+    { wch: 16 }, { wch: 14 }, { wch: 12 }, { wch: 18 },
   ]
 
   const wb = XLSX.utils.book_new()

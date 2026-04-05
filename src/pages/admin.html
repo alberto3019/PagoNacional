@@ -428,12 +428,12 @@
     <div id="tab-cuentas" style="display:none">
       <div class="card" style="background:var(--white); border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:12px;">
         <form id="form-nueva-cuenta" onsubmit="event.preventDefault(); crearCuenta();">
-          <p class="cuenta-form-hint">Todos los campos son obligatorios. Tenés que cargar <strong>CBU</strong> o <strong>CVU</strong> (al menos uno; pueden ser los dos).</p>
+          <p class="cuenta-form-hint">Cuentas para <strong>asignar el echeq</strong> por CUIT y librador (no CBU/CVU). Todos los campos son obligatorios.</p>
           <div class="filters" style="margin-bottom:0;">
             <input type="text" id="cta-titular" name="titular" placeholder="Titular" required autocomplete="name" />
             <input type="text" id="cta-alias" name="alias" placeholder="Alias" required autocomplete="off" />
-            <input type="text" id="cta-cbu" name="cbu" placeholder="CBU (22 dígitos)" maxlength="22" inputmode="numeric" autocomplete="off" />
-            <input type="text" id="cta-cvu" name="cvu" placeholder="CVU (22 dígitos)" maxlength="22" inputmode="numeric" autocomplete="off" />
+            <input type="text" id="cta-cuit" name="cuit" placeholder="CUIT (11 dígitos)" maxlength="14" inputmode="numeric" autocomplete="off" required />
+            <input type="text" id="cta-librador" name="librador" placeholder="Librador (banco / razón social)" required autocomplete="organization" />
             <input type="text" id="cta-banco" name="banco" placeholder="Banco" required autocomplete="organization" />
             <button type="submit" class="btn-export">Agregar cuenta</button>
           </div>
@@ -445,14 +445,15 @@
             <tr>
               <th>Titular</th>
               <th>Alias</th>
-              <th>CBU/CVU</th>
+              <th>CUIT</th>
+              <th>Librador</th>
               <th>Banco</th>
               <th>Alta</th>
               <th></th>
             </tr>
           </thead>
           <tbody id="tbody-cuentas">
-            <tr><td colspan="6" class="empty">Cargando...</td></tr>
+            <tr><td colspan="7" class="empty">Cargando...</td></tr>
           </tbody>
         </table>
       </div>
@@ -604,7 +605,7 @@
     <form id="form-edit-cuenta" onsubmit="event.preventDefault(); guardarEdicionCuenta();">
       <div class="modal-body">
         <div class="modal-form">
-          <p class="cuenta-form-hint" style="margin-bottom:4px;">Titular, alias y banco obligatorios. CBU o CVU: al menos uno.</p>
+          <p class="cuenta-form-hint" style="margin-bottom:4px;">Titular, alias, CUIT (11 dígitos), librador y banco obligatorios.</p>
           <div>
             <label for="edit-cuenta-titular">Titular<span class="cuenta-req">*</span></label>
             <input id="edit-cuenta-titular" type="text" required autocomplete="name" />
@@ -614,12 +615,12 @@
             <input id="edit-cuenta-alias" type="text" required autocomplete="off" />
           </div>
           <div>
-            <label for="edit-cuenta-cbu">CBU (22 dígitos)</label>
-            <input id="edit-cuenta-cbu" type="text" maxlength="22" inputmode="numeric" autocomplete="off" />
+            <label for="edit-cuenta-cuit">CUIT (11 dígitos)<span class="cuenta-req">*</span></label>
+            <input id="edit-cuenta-cuit" type="text" maxlength="14" inputmode="numeric" autocomplete="off" required />
           </div>
           <div>
-            <label for="edit-cuenta-cvu">CVU (22 dígitos)</label>
-            <input id="edit-cuenta-cvu" type="text" maxlength="22" inputmode="numeric" autocomplete="off" />
+            <label for="edit-cuenta-librador">Librador<span class="cuenta-req">*</span></label>
+            <input id="edit-cuenta-librador" type="text" required autocomplete="organization" />
           </div>
           <div>
             <label for="edit-cuenta-banco">Banco<span class="cuenta-req">*</span></label>
@@ -805,7 +806,10 @@
         const numero = s.numero || ''
         const echeq = s.numero_echeq || ''
         const banco = s.banco_emisor || ''
-        const cuentaAsignada = s.cuenta_destino_alias || s.cuenta_destino_cvu || '-'
+        const cuentaAsignada =
+          [s.cuenta_destino_alias, s.cuenta_destino_cuit, s.cuenta_destino_librador].filter(Boolean).join(' · ') ||
+          s.cuenta_destino_cvu ||
+          '-'
         const vto = s.fecha_vencimiento || ''
         const monto = Number(s.monto || 0).toLocaleString('es-AR')
         const estadoLabel = estado.charAt(0).toUpperCase() + estado.slice(1)
@@ -914,9 +918,11 @@
 
     const cuentaRow = document.getElementById('m-row-cuenta')
     const cuentaLbl = document.getElementById('m-cuenta')
-    if (s.cuenta_destino_alias || s.cuenta_destino_cvu || s.cuenta_destino_titular) {
+    if (s.cuenta_destino_alias || s.cuenta_destino_cuit || s.cuenta_destino_librador || s.cuenta_destino_titular || s.cuenta_destino_cvu) {
       cuentaRow.style.display = 'flex'
-      cuentaLbl.textContent = `${s.cuenta_destino_alias || '-'} · ${s.cuenta_destino_cvu || '-'}`
+      cuentaLbl.textContent = s.cuenta_destino_cuit || s.cuenta_destino_librador
+        ? `${s.cuenta_destino_alias || '-'} · CUIT ${s.cuenta_destino_cuit || '-'} · ${s.cuenta_destino_librador || '-'}`
+        : `${s.cuenta_destino_alias || '-'} · (ref. anterior) ${s.cuenta_destino_cvu || '-'}`
     } else {
       cuentaRow.style.display = 'none'
       cuentaLbl.textContent = ''
@@ -924,7 +930,7 @@
 
     const sel = document.getElementById('m-cuenta-select')
     sel.innerHTML = '<option value="">Seleccionar cuenta destino...</option>' +
-      cuentasCache.map(c => `<option value="${c.id}">${c.alias} · ${c.titular} · ${c.cvu || c.cbu || ''}</option>`).join('')
+      cuentasCache.map(c => `<option value="${c.id}">${c.alias} · ${c.titular} · CUIT ${c.cuit || ''} · ${c.librador || ''}</option>`).join('')
 
     document.getElementById('overlay').classList.add('open')
   }
@@ -969,19 +975,20 @@
 
   async function cargarCuentas() {
     const tb = document.getElementById('tbody-cuentas')
-    tb.innerHTML = '<tr><td colspan="6" class="empty">Cargando...</td></tr>'
+    tb.innerHTML = '<tr><td colspan="7" class="empty">Cargando...</td></tr>'
     try {
       const data = await listarCuentasDestino()
       cuentasCache = data
       if (!data.length) {
-        tb.innerHTML = '<tr><td colspan="6" class="empty">No hay cuentas cargadas.</td></tr>'
+        tb.innerHTML = '<tr><td colspan="7" class="empty">No hay cuentas cargadas.</td></tr>'
         return
       }
       tb.innerHTML = data.map((c, i) => `
         <tr>
           <td>${c.titular || ''}</td>
           <td class="mono">${c.alias || ''}</td>
-          <td class="mono">${c.cvu || c.cbu || ''}</td>
+          <td class="mono">${c.cuit || ''}</td>
+          <td>${c.librador || ''}</td>
           <td>${c.banco || ''}</td>
           <td>${c.created_at ? new Date(c.created_at).toLocaleDateString('es-AR') : ''}</td>
           <td style="white-space:nowrap">
@@ -991,7 +998,7 @@
         </tr>
       `).join('')
     } catch (e) {
-      tb.innerHTML = `<tr><td colspan="6" class="empty">Error: ${e.message}</td></tr>`
+      tb.innerHTML = `<tr><td colspan="7" class="empty">Error: ${e.message}</td></tr>`
     }
   }
 
@@ -1003,15 +1010,15 @@
     }
     const titular = document.getElementById('cta-titular').value.trim()
     const alias = document.getElementById('cta-alias').value.trim()
-    const cbu = document.getElementById('cta-cbu').value.trim()
-    const cvu = document.getElementById('cta-cvu').value.trim()
+    const cuit = document.getElementById('cta-cuit').value.trim()
+    const librador = document.getElementById('cta-librador').value.trim()
     const banco = document.getElementById('cta-banco').value.trim()
     try {
-      await crearCuentaDestino({ titular, alias, cbu, cvu, banco })
+      await crearCuentaDestino({ titular, alias, cuit, librador, banco })
       document.getElementById('cta-titular').value = ''
       document.getElementById('cta-alias').value = ''
-      document.getElementById('cta-cbu').value = ''
-      document.getElementById('cta-cvu').value = ''
+      document.getElementById('cta-cuit').value = ''
+      document.getElementById('cta-librador').value = ''
       document.getElementById('cta-banco').value = ''
       await cargarCuentas()
       alert('Cuenta creada correctamente.')
@@ -1026,8 +1033,8 @@
     cuentaEditandoId = c.id
     document.getElementById('edit-cuenta-titular').value = c.titular || ''
     document.getElementById('edit-cuenta-alias').value = c.alias || ''
-    document.getElementById('edit-cuenta-cbu').value = c.cbu || ''
-    document.getElementById('edit-cuenta-cvu').value = c.cvu || ''
+    document.getElementById('edit-cuenta-cuit').value = c.cuit || ''
+    document.getElementById('edit-cuenta-librador').value = c.librador || ''
     document.getElementById('edit-cuenta-banco').value = c.banco || ''
     document.getElementById('overlay-cuenta').classList.add('open')
   }
@@ -1046,11 +1053,11 @@
     }
     const titular = document.getElementById('edit-cuenta-titular').value.trim()
     const alias = document.getElementById('edit-cuenta-alias').value.trim()
-    const cbu = document.getElementById('edit-cuenta-cbu').value.trim()
-    const cvu = document.getElementById('edit-cuenta-cvu').value.trim()
+    const cuit = document.getElementById('edit-cuenta-cuit').value.trim()
+    const librador = document.getElementById('edit-cuenta-librador').value.trim()
     const banco = document.getElementById('edit-cuenta-banco').value.trim()
     try {
-      await actualizarCuentaDestino(cuentaEditandoId, { titular, alias, cbu, cvu, banco })
+      await actualizarCuentaDestino(cuentaEditandoId, { titular, alias, cuit, librador, banco })
       await cargarCuentas()
       cerrarModalCuenta()
       alert('Cuenta actualizada.')
