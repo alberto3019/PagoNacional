@@ -1,7 +1,6 @@
--- Cuentas destino del admin: CUIT + librador (asignación de echeq), en lugar de CBU/CVU.
--- Ejecutar en Supabase → SQL Editor si la app espera columnas cuit/librador y falla.
+-- Cuentas destino del admin: solo CUIT (asignación por CUIT).
+-- El librador del echeq está en solicitudes.librador (ver patch-solicitud-librador-echeq.sql).
 
 ALTER TABLE cuentas_destino ADD COLUMN IF NOT EXISTS cuit TEXT;
-ALTER TABLE cuentas_destino ADD COLUMN IF NOT EXISTS librador TEXT;
 ALTER TABLE solicitudes ADD COLUMN IF NOT EXISTS cuenta_destino_cuit TEXT;
 ALTER TABLE solicitudes ADD COLUMN IF NOT EXISTS cuenta_destino_librador TEXT;

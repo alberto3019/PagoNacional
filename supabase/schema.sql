@@ -39,6 +39,7 @@ CREATE TABLE solicitudes (
   numero_echeq TEXT NOT NULL,
   monto NUMERIC(12, 2) NOT NULL,
   banco_emisor TEXT NOT NULL,
+  librador TEXT,
   fecha_vencimiento DATE NOT NULL,
   dni_frente_url TEXT,
   dni_dorso_url TEXT,
@@ -50,7 +51,6 @@ CREATE TABLE solicitudes (
   cuenta_destino_titular TEXT,
   cuenta_destino_cvu TEXT,
   cuenta_destino_cuit TEXT,
-  cuenta_destino_librador TEXT,
   cuenta_destino_banco TEXT,
   terminos_html TEXT,
   terminos_aceptados_at TIMESTAMPTZ,
@@ -96,7 +96,6 @@ CREATE TABLE cuentas_destino (
   alias TEXT NOT NULL,
   titular TEXT NOT NULL,
   cuit TEXT,
-  librador TEXT,
   banco TEXT,
   activa BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMPTZ DEFAULT NOW()

@@ -340,8 +340,8 @@
               <th>Monto</th>
               <th>Titular</th>
               <th>Alias</th>
-              <th>CUIT</th>
-              <th>Librador</th>
+              <th>CUIT asign.</th>
+              <th>Librador echeq</th>
               <th>Banco cuenta</th>
               <th>Banco echeq</th>
               <th>Estado</th>
@@ -368,12 +368,12 @@
         <button type="button" class="cuenta-modal-close" onclick="cerrarModalCuenta()" aria-label="Cerrar">×</button>
       </div>
       <div class="cuenta-modal-body">
-        <p class="sub" style="margin-bottom:16px;font-size:13px;">CUIT y librador asignados para el echeq (aprobación).</p>
+        <p class="sub" style="margin-bottom:16px;font-size:13px;">CUIT de asignación y datos del echeq (librador de tu solicitud).</p>
         <dl class="cuenta-dl">
           <div><dt>Titular</dt><dd id="cd-titular">—</dd></div>
           <div><dt>Alias</dt><dd id="cd-alias" class="mono">—</dd></div>
           <div><dt>CUIT</dt><dd id="cd-cuit" class="mono">—</dd></div>
-          <div><dt>Librador</dt><dd id="cd-librador">—</dd></div>
+          <div><dt>Librador (echeq)</dt><dd id="cd-librador">—</dd></div>
           <div id="cd-legacy-row" style="display:none"><dt>Ref. anterior</dt><dd id="cd-legacy" class="mono">—</dd></div>
           <div><dt>Banco</dt><dd id="cd-banco">—</dd></div>
         </dl>
@@ -402,7 +402,7 @@
       const titular = String(s.cuenta_destino_titular || '').trim()
       const alias = String(s.cuenta_destino_alias || '').trim()
       const cuit = String(s.cuenta_destino_cuit || '').trim()
-      const librador = String(s.cuenta_destino_librador || '').trim()
+      const librador = String(s.librador || '').trim()
       const legacyCvu = String(s.cuenta_destino_cvu || '').trim()
       const bancoCta = String(s.cuenta_destino_banco || '').trim()
       const has = !!(titular || alias || cuit || librador || legacyCvu || bancoCta)
@@ -475,8 +475,8 @@
             <div class="sol-row"><dt>Monto</dt><dd>${monto}</dd></div>
             <div class="sol-row"><dt>Titular</dt><dd>${dash(cd.titular)}</dd></div>
             <div class="sol-row"><dt>Alias</dt><dd class="mono">${dash(cd.alias)}</dd></div>
-            <div class="sol-row"><dt>CUIT</dt><dd class="mono">${dash(cd.cuit)}</dd></div>
-            <div class="sol-row"><dt>Librador</dt><dd>${dash(cd.librador)}</dd></div>
+            <div class="sol-row"><dt>CUIT asign.</dt><dd class="mono">${dash(cd.cuit)}</dd></div>
+            <div class="sol-row"><dt>Librador echeq</dt><dd>${dash(cd.librador)}</dd></div>
             <div class="sol-row"><dt>Banco cuenta</dt><dd>${dash(cd.bancoCta)}</dd></div>
             <div class="sol-row"><dt>Banco echeq</dt><dd>${s.banco_emisor}</dd></div>
             <div class="sol-row"><dt>Fecha</dt><dd>${fecha}</dd></div>

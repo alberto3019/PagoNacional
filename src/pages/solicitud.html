@@ -170,6 +170,10 @@
         <option>Otro</option>
       </select>
     </div>
+    <div class="field">
+      <label>Librador<span class="req" aria-hidden="true">*</span></label>
+      <input type="text" id="librador" name="librador" placeholder="Razón social o banco librador del echeq" required autocomplete="organization" />
+    </div>
   </div>
 
   <div class="card">
@@ -306,6 +310,7 @@
     const monto        = document.getElementById('monto').value.trim()
     const vencimiento  = document.getElementById('vencimiento').value
     const banco        = document.getElementById('banco').value
+    const librador     = document.getElementById('librador').value.trim()
     const fileFrente   = document.getElementById('file-frente').files[0]
     const fileDorso    = document.getElementById('file-dorso').files[0]
 
@@ -323,6 +328,11 @@
     if (!numero_echeq) {
       alertEl.className = 'alert error'
       alertEl.textContent = 'Tenés que ingresar el número de echeq.'
+      return
+    }
+    if (!librador) {
+      alertEl.className = 'alert error'
+      alertEl.textContent = 'Tenés que ingresar el librador del echeq.'
       return
     }
 
@@ -411,6 +421,7 @@
         numero_echeq,
         monto: montoNum,
         banco_emisor: banco,
+        librador,
         fecha_vencimiento: vencimiento,
         dni_frente_url: dniFrente,
         dni_dorso_url: dniDorso,

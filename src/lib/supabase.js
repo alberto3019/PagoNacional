@@ -264,7 +264,7 @@ export async function aprobarSolicitudConCuenta(solicitudId, cuenta) {
       cuenta_destino_titular: cuenta?.titular || null,
       cuenta_destino_cvu: null,
       cuenta_destino_cuit: cuenta?.cuit || null,
-      cuenta_destino_librador: cuenta?.librador || null,
+      cuenta_destino_librador: null,
       cuenta_destino_banco: cuenta?.banco || null,
     })
     .eq('id', solicitudId)
@@ -294,14 +294,12 @@ function validarDatosCuentaDestino(datos) {
   const titular = String(datos?.titular ?? '').trim()
   const alias = String(datos?.alias ?? '').trim()
   const cuit = normalizarCuit(datos?.cuit)
-  const librador = String(datos?.librador ?? '').trim()
   const banco = String(datos?.banco ?? '').trim()
   if (!titular) throw new Error('El titular es obligatorio.')
   if (!alias) throw new Error('El alias es obligatorio.')
   if (!banco) throw new Error('El banco es obligatorio.')
   if (cuit.length !== 11) throw new Error('El CUIT debe tener 11 dígitos.')
-  if (!librador) throw new Error('El librador es obligatorio.')
-  return { titular, alias, cuit, librador, banco }
+  return { titular, alias, cuit, banco }
 }
 
 export async function crearCuentaDestino(datos) {
@@ -310,8 +308,7 @@ export async function crearCuentaDestino(datos) {
   const payload = {
     alias: v.alias,
     titular: v.titular,
-    cbu: v.cbu || null,
-    cvu: v.cvu || null,
+    cuit: v.cuit,
     banco: v.banco || null,
     activa: true,
   }
@@ -331,7 +328,6 @@ export async function actualizarCuentaDestino(cuentaId, datos) {
     alias: v.alias,
     titular: v.titular,
     cuit: v.cuit,
-    librador: v.librador,
     banco: v.banco || null,
   }
   const { data, error } = await supabase

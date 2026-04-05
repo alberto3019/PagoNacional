@@ -8,6 +8,7 @@ ALTER TABLE solicitudes ADD COLUMN IF NOT EXISTS cuenta_destino_titular TEXT;
 ALTER TABLE solicitudes ADD COLUMN IF NOT EXISTS cuenta_destino_cvu TEXT;
 ALTER TABLE solicitudes ADD COLUMN IF NOT EXISTS cuenta_destino_cuit TEXT;
 ALTER TABLE solicitudes ADD COLUMN IF NOT EXISTS cuenta_destino_librador TEXT;
+ALTER TABLE solicitudes ADD COLUMN IF NOT EXISTS librador TEXT;
 ALTER TABLE solicitudes ADD COLUMN IF NOT EXISTS cuenta_destino_banco TEXT;
 ALTER TABLE solicitudes ADD COLUMN IF NOT EXISTS terminos_html TEXT;
 ALTER TABLE solicitudes ADD COLUMN IF NOT EXISTS terminos_aceptados_at TIMESTAMPTZ;
