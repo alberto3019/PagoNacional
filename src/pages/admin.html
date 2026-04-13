@@ -287,9 +287,10 @@
 
       .tbl { min-width: 520px; font-size: 12px; }
       .tbl th, .tbl td { padding: 9px 10px; }
-      .tbl th:nth-child(3), .tbl td:nth-child(3),
-      .tbl th:nth-child(4), .tbl td:nth-child(4),
-      .tbl th:nth-child(6), .tbl td:nth-child(6) { display: none; }
+      /* Solo solicitudes: muchas columnas; no aplicar a Cuentas (col. 6 = acciones) ni otras tablas */
+      #tab-solicitudes .tbl th:nth-child(3), #tab-solicitudes .tbl td:nth-child(3),
+      #tab-solicitudes .tbl th:nth-child(4), #tab-solicitudes .tbl td:nth-child(4),
+      #tab-solicitudes .tbl th:nth-child(6), #tab-solicitudes .tbl td:nth-child(6) { display: none; }
 
       .modal { max-width: 100%; margin: 0 auto; }
       .modal-actions { flex-wrap: wrap; }
