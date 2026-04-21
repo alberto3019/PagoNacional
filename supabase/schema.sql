@@ -52,6 +52,13 @@ CREATE TABLE solicitudes (
   cuenta_destino_cvu TEXT,
   cuenta_destino_cuit TEXT,
   cuenta_destino_banco TEXT,
+  -- Snapshot (congelado) del cashflow al crear la solicitud
+  liq_comercial_nombre TEXT,
+  liq_comision_pct NUMERIC(6, 2),
+  liq_gasto_admin NUMERIC(14, 2),
+  liq_comision_monto NUMERIC(14, 2),
+  liq_subtotal NUMERIC(14, 2),
+  liq_neto_transferir NUMERIC(14, 2),
   terminos_html TEXT,
   terminos_aceptados_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT NOW(),

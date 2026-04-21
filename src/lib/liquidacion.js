@@ -57,3 +57,48 @@ export function armarLiquidacionParaEmail(camionero, finanzas, montoSolicitud) {
     montoSolicitud: r.montoBruto,
   }
 }
+
+/**
+ * Si la solicitud ya trae snapshot, usarlo. Si no, calcular con config vigente.
+ * @param {object|null} solicitud
+ * @param {object|null} camionero
+ * @param {object|null} finanzas
+ */
+export function liquidacionDesdeSolicitudOSistema(solicitud, camionero, finanzas) {
+  const s = solicitud || {}
+  const monto = Number(s.monto ?? s.montoSolicitud ?? 0) || 0
+
+  // Snapshot nuevo (congelado)
+  if (s.liq_comercial_nombre != null || s.liq_comision_pct != null || s.liq_gasto_admin != null) {
+    const pct = Number(s.liq_comision_pct) || 0
+    const gasto = Number(s.liq_gasto_admin) || 0
+    const comisionMonto = Number(s.liq_comision_monto)
+    const neto = Number(s.liq_neto_transferir)
+    const subtotal = Number(s.liq_subtotal)
+
+    // Si faltan importes derivados por cualquier motivo, los recomputamos con monto/pct/gasto.
+    if (Number.isFinite(comisionMonto) && Number.isFinite(neto) && Number.isFinite(subtotal)) {
+      return {
+        comercialNombre: String(s.liq_comercial_nombre || '').trim() || 'Pago Nacional',
+        porcentajeComision: pct,
+        montoComision: comisionMonto,
+        montoTrasComision: subtotal,
+        gastoAdministrativo: gasto,
+        netoEstimado: neto,
+        montoSolicitud: monto,
+      }
+    }
+    const r = calcularLiquidacionGestion(monto, pct, gasto)
+    return {
+      comercialNombre: String(s.liq_comercial_nombre || '').trim() || 'Pago Nacional',
+      porcentajeComision: r.porcentajeComision,
+      montoComision: r.comisionMonto,
+      montoTrasComision: r.trasComision,
+      gastoAdministrativo: r.gastoAdministrativo,
+      netoEstimado: r.neto,
+      montoSolicitud: r.montoBruto,
+    }
+  }
+
+  return armarLiquidacionParaEmail(camionero, finanzas, monto)
+}

@@ -23,6 +23,14 @@ INSERT INTO finanzas_config (id) VALUES (1) ON CONFLICT (id) DO NOTHING;
 
 ALTER TABLE camioneros ADD COLUMN IF NOT EXISTS comercial_id UUID REFERENCES comerciales(id) ON DELETE SET NULL;
 
+-- Snapshot (congelado) del cashflow por solicitud
+ALTER TABLE solicitudes ADD COLUMN IF NOT EXISTS liq_comercial_nombre TEXT;
+ALTER TABLE solicitudes ADD COLUMN IF NOT EXISTS liq_comision_pct NUMERIC(6, 2);
+ALTER TABLE solicitudes ADD COLUMN IF NOT EXISTS liq_gasto_admin NUMERIC(14, 2);
+ALTER TABLE solicitudes ADD COLUMN IF NOT EXISTS liq_comision_monto NUMERIC(14, 2);
+ALTER TABLE solicitudes ADD COLUMN IF NOT EXISTS liq_subtotal NUMERIC(14, 2);
+ALTER TABLE solicitudes ADD COLUMN IF NOT EXISTS liq_neto_transferir NUMERIC(14, 2);
+
 ALTER TABLE comerciales ENABLE ROW LEVEL SECURITY;
 ALTER TABLE finanzas_config ENABLE ROW LEVEL SECURITY;
 

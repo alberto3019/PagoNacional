@@ -94,6 +94,19 @@
         <div class="row"><span class="label">Email</span><span class="val" id="p-email">—</span></div>
         <div class="row"><span class="label">Celular</span><span class="val" id="p-cel">—</span></div>
 
+        <div class="section" style="margin-top:16px;">Referido</div>
+        <p style="color:var(--text-muted);font-size:13px;line-height:1.6;margin:-4px 0 12px 0;">
+          Seleccioná quién te recomendó o te incorporó a la plataforma. Es obligatorio para poder generar solicitudes.
+        </p>
+        <div style="display:grid;gap:10px;">
+          <select id="ref-select"
+            style="width:100%;padding:11px 12px;border:1px solid var(--border);border-radius:10px;font-size:14px;font-family:'DM Sans',sans-serif;background:#fff;color:var(--text);">
+            <option value="">Seleccionar referido…</option>
+          </select>
+          <button class="btn btn-primary" type="button" onclick="guardarReferido()">Guardar referido</button>
+          <div id="ref-msg" style="display:none;font-size:13px;color:#065f46;">Guardado.</div>
+        </div>
+
         <div class="actions">
           <button class="btn btn-primary" onclick="nuevaSolicitud()">Nueva solicitud</button>
           <button class="btn" onclick="logout()">Cerrar sesión</button>
@@ -121,14 +134,23 @@
   </div>
 
   <script type="module">
-    import { obtenerCamioneroPorEmail, obtenerSolicitudesDeCamionero } from '../lib/supabase.js'
+    import { obtenerCamioneroPorEmail, obtenerSolicitudesDeCamionero, listarComerciales, actualizarComercialCamionero } from '../lib/supabase.js'
     import { routes } from '../lib/routes.js'
 
     const alertEl = document.getElementById('alert')
+    let camioneroCache = null
+    let comercialesCache = []
 
     function showError(msg) {
       alertEl.className = 'alert error'
       alertEl.textContent = msg
+    }
+
+    function escapeHtml(s) {
+      return String(s ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/"/g, '&quot;')
     }
 
     function badgeCls(estado) {
@@ -145,7 +167,51 @@
     }
 
     window.nuevaSolicitud = function() {
+      if (!camioneroCache?.comercial_id) {
+        showError('Antes de crear una solicitud tenés que seleccionar y guardar tu Referido.')
+        return
+      }
       window.location.href = routes.solicitud
+    }
+
+    window.guardarReferido = async function() {
+      const camioneroId = sessionStorage.getItem('camionero_id')
+      const val = String(document.getElementById('ref-select').value || '').trim()
+      const msg = document.getElementById('ref-msg')
+      msg.style.display = 'none'
+
+      if (!camioneroId) {
+        showError('Sesión inválida. Volvé a iniciar sesión.')
+        return
+      }
+      if (!val) {
+        showError('Seleccioná un Referido.')
+        return
+      }
+      try {
+        await actualizarComercialCamionero(camioneroId, val)
+        camioneroCache = { ...(camioneroCache || {}), comercial_id: val }
+        msg.style.display = 'block'
+        setTimeout(() => { msg.style.display = 'none' }, 3500)
+      } catch (e) {
+        console.error(e)
+        showError(e?.message || 'No se pudo guardar el referido.')
+      }
+    }
+
+    async function cargarReferidos(selectedId) {
+      const sel = document.getElementById('ref-select')
+      sel.innerHTML = '<option value="">Seleccionar referido…</option>'
+      try {
+        comercialesCache = await listarComerciales()
+      } catch (e) {
+        console.warn('No se pudieron cargar referidos:', e)
+        comercialesCache = []
+      }
+      sel.innerHTML += (comercialesCache || [])
+        .map(c => `<option value="${escapeHtml(c.id)}">${escapeHtml(`${c.nombre || ''} ${c.apellido || ''}`.trim())}</option>`)
+        .join('')
+      if (selectedId) sel.value = selectedId
     }
 
     async function loadPage() {
@@ -158,6 +224,7 @@
 
       try {
         const c = await obtenerCamioneroPorEmail(email)
+        camioneroCache = c
         if (!c.email_verificado) {
           showError('Tu cuenta todavía no está verificada. Revisá tu email y verificá tu cuenta.')
           return
@@ -169,6 +236,8 @@
         document.getElementById('p-cuit').textContent = c.cuit || '—'
         document.getElementById('p-email').textContent = c.email || '—'
         document.getElementById('p-cel').textContent = c.celular || '—'
+
+        await cargarReferidos(c.comercial_id || '')
 
         const rows = await obtenerSolicitudesDeCamionero(camioneroId)
         const empty = document.getElementById('empty')

@@ -383,6 +383,8 @@
               <th>Camionero</th>
               <th>DNI</th>
               <th>Monto</th>
+              <th>Comercial</th>
+              <th>A transferir</th>
               <th>Banco</th>
               <th>Cuenta asignada</th>
               <th>Vencimiento</th>
@@ -392,7 +394,7 @@
             </tr>
           </thead>
           <tbody id="tbody-solicitudes">
-            <tr><td colspan="11" class="empty">Cargando...</td></tr>
+            <tr><td colspan="13" class="empty">Cargando...</td></tr>
           </tbody>
         </table>
       </div>
@@ -593,6 +595,13 @@
           <span class="detail-label">Cuenta asignada</span>
           <span class="detail-val" id="m-cuenta"></span>
         </div>
+        <div id="m-cashflow" style="display:none; margin-top:12px;">
+          <div class="modal-section" style="margin-top:10px;">Cashflow</div>
+          <div class="detail-row"><span class="detail-label">Comercial</span><span class="detail-val" id="m-co"></span></div>
+          <div class="detail-row"><span class="detail-label">Comisión (%)</span><span class="detail-val" id="m-co-pct"></span></div>
+          <div class="detail-row"><span class="detail-label">Gasto administrativo</span><span class="detail-val" id="m-gasto"></span></div>
+          <div class="detail-row"><span class="detail-label">Total a transferir</span><span class="detail-val" id="m-neto"></span></div>
+        </div>
         <div id="m-aprobacion-wrap" style="display:none; margin-top:10px;">
           <div class="modal-section" style="margin-top:10px;">Aprobación</div>
           <select id="m-cuenta-select" style="width:100%; padding:9px 12px; border:1px solid var(--border); border-radius:8px; font-size:13px; font-family:'DM Sans',sans-serif;">
@@ -725,7 +734,7 @@
     listarComerciales, crearComercial, eliminarComercial, obtenerFinanzasConfig, guardarFinanzasConfig,
     actualizarComercialCamionero,
   } from '../lib/supabase.js'
-  import { armarLiquidacionParaEmail } from '../lib/liquidacion.js'
+  import { armarLiquidacionParaEmail, liquidacionDesdeSolicitudOSistema } from '../lib/liquidacion.js'
   import { exportarSolicitudes, exportarCamioneros } from '../lib/exportExcel.js'
   import { enviarAprobacionConCuenta } from '../lib/emails.js'
   import {
@@ -746,6 +755,7 @@
   let camSolicitudesCache = []
   let comercialesCache = []
   let modalCamioneroId = null
+  let finanzasCache = null
 
   // ── AUTH ──────────────────────────────────────────────────────
   // El admin entra por el login general (/login).
@@ -826,6 +836,7 @@
   async function cargarTodo() {
     await Promise.all([
       ensurePrestamistaLoaded(),
+      (async () => { try { finanzasCache = await obtenerFinanzasConfig() } catch {} })(),
       cargarStats(),
       cargarSolicitudes(),
       cargarCuentas(),
@@ -973,7 +984,7 @@
     const hasta    = document.getElementById('f-hasta').value
 
     document.getElementById('tbody-solicitudes').innerHTML =
-      '<tr><td colspan="10" class="empty">Cargando...</td></tr>'
+      '<tr><td colspan="13" class="empty">Cargando...</td></tr>'
 
     try {
       const data = await listarSolicitudes({ busqueda, estado, desde, hasta })
@@ -993,7 +1004,7 @@
       renderSolicitudes(filtered)
     } catch(e) {
       document.getElementById('tbody-solicitudes').innerHTML =
-        `<tr><td colspan="10" class="empty">Error cargando datos: ${e.message}</td></tr>`
+        `<tr><td colspan="13" class="empty">Error cargando datos: ${e.message}</td></tr>`
     }
   }
 
@@ -1003,7 +1014,7 @@
   function renderSolicitudes(rows) {
     const tb = document.getElementById('tbody-solicitudes')
     if (!rows.length) {
-      tb.innerHTML = '<tr><td colspan="11" class="empty">No se encontraron solicitudes.</td></tr>'
+      tb.innerHTML = '<tr><td colspan="13" class="empty">No se encontraron solicitudes.</td></tr>'
       return
     }
     try {
@@ -1015,6 +1026,9 @@
         const numero = s.numero || ''
         const echeq = s.numero_echeq || ''
         const banco = s.banco_emisor || ''
+        const liq = liquidacionDesdeSolicitudOSistema(s, cam, finanzasCache)
+        const neto = Number(liq?.netoEstimado || 0)
+        const comercialLbl = liq?.comercialNombre || 'Pago Nacional'
         const cuentaAsignada =
           [s.cuenta_destino_alias, s.cuenta_destino_cuit].filter(Boolean).join(' · ') ||
           s.cuenta_destino_cvu ||
@@ -1029,6 +1043,8 @@
             <td>${cam.nombre || ''} ${cam.apellido || ''}</td>
             <td class="mono">${cam.dni || ''}</td>
             <td>$${monto}</td>
+            <td style="font-size:12px;max-width:180px;">${escapeHtml(comercialLbl)}</td>
+            <td style="font-weight:600;">$${neto.toLocaleString('es-AR', { maximumFractionDigits: 2 })}</td>
             <td>${banco}</td>
             <td class="mono">${cuentaAsignada}</td>
             <td>${vto}</td>
@@ -1042,7 +1058,7 @@
       }).join('')
     } catch (e) {
       console.error(e)
-      tb.innerHTML = `<tr><td colspan="11" class="empty">Error renderizando solicitudes: ${e.message}</td></tr>`
+      tb.innerHTML = `<tr><td colspan="13" class="empty">Error renderizando solicitudes: ${e.message}</td></tr>`
     }
   }
 
@@ -1115,6 +1131,17 @@
     document.getElementById('m-estado').innerHTML =
       `<span class="badge ${cls}">${s.estado.charAt(0).toUpperCase()+s.estado.slice(1)}</span>`
 
+    try {
+      const liq = liquidacionDesdeSolicitudOSistema(s, cam, finanzasCache)
+      document.getElementById('m-cashflow').style.display = 'block'
+      document.getElementById('m-co').textContent = liq?.comercialNombre || 'Pago Nacional'
+      document.getElementById('m-co-pct').textContent = `${Number(liq?.porcentajeComision || 0)}%`
+      document.getElementById('m-gasto').textContent = '$' + Number(liq?.gastoAdministrativo || 0).toLocaleString('es-AR', { maximumFractionDigits: 2 })
+      document.getElementById('m-neto').textContent = '$' + Number(liq?.netoEstimado || 0).toLocaleString('es-AR', { maximumFractionDigits: 2 })
+    } catch {
+      document.getElementById('m-cashflow').style.display = 'none'
+    }
+
     const fImg = document.getElementById('m-img-frente')
     const dImg = document.getElementById('m-img-dorso')
     fImg.src = s.dni_frente_url || ''
@@ -1154,6 +1181,8 @@
     modalSolicitudId = null
     modalCamioneroId = null
     document.getElementById('cam-comercial-wrap').style.display = 'none'
+    const cf = document.getElementById('m-cashflow')
+    if (cf) cf.style.display = 'none'
   }
 
   window.cambiarEstado = async function(estado) {
@@ -1170,13 +1199,7 @@
         const row = solicitudesCache.find(s => s.id === modalSolicitudId)
         const cam = row?.camioneros || {}
         const solicitudMail = { ...(row || {}), ...(updated || {}) }
-        let liquidacion = null
-        try {
-          const fin = await obtenerFinanzasConfig()
-          liquidacion = armarLiquidacionParaEmail(cam, fin, solicitudMail.monto)
-        } catch (e) {
-          console.warn('Liquidación email aprobación:', e)
-        }
+        const liquidacion = liquidacionDesdeSolicitudOSistema(solicitudMail, cam, finanzasCache)
         await Promise.allSettled([
           enviarAprobacionConCuenta(
             cam.email,
