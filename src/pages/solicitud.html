@@ -218,8 +218,9 @@
 </div>
 
 <script type="module">
-  import { crearSolicitud, subirImagenCloudinary, obtenerCamioneroPorEmail, actualizarDniFotosCamionero } from '../lib/supabase.js'
+  import { crearSolicitud, subirImagenCloudinary, obtenerCamioneroPorEmail, actualizarDniFotosCamionero, obtenerFinanzasConfig } from '../lib/supabase.js'
   import { enviarConfirmacionSolicitud, enviarNotificacionAdmin } from '../lib/emails.js'
+  import { armarLiquidacionParaEmail } from '../lib/liquidacion.js'
   import { datosPrestamistaParaTerminos, ensurePrestamistaLoaded } from '../lib/terminosEmpresa.js'
   import { routes } from '../lib/routes.js'
 
@@ -449,8 +450,16 @@
             celular: '',
           }
 
+      let liquidacion = null
+      try {
+        const fin = await obtenerFinanzasConfig()
+        liquidacion = armarLiquidacionParaEmail(camionero, fin, solicitud.monto)
+      } catch (e) {
+        console.warn('No se pudo calcular liquidación para el email:', e)
+      }
+
       await Promise.allSettled([
-        enviarConfirmacionSolicitud(email, nombre, solicitud),
+        enviarConfirmacionSolicitud(email, nombre, solicitud, liquidacion),
         enviarNotificacionAdmin(ADMIN_EMAIL, solicitud, camioneroMail),
       ])
 

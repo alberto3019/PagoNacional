@@ -33,6 +33,47 @@ function adminPanelUrl(baseUrl) {
   return b ? `${b}/admin` : '/admin'
 }
 
+function fmtArs(n) {
+  const x = Number(n)
+  if (!Number.isFinite(x)) return '—'
+  return '$' + x.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+
+/** Bloque HTML opcional: comercial + desglose neto estimado */
+function liquidacionEmailBlock(liquidacion) {
+  if (!liquidacion || typeof liquidacion !== 'object') return ''
+  const {
+    comercialNombre,
+    porcentajeComision,
+    montoComision,
+    montoTrasComision,
+    gastoAdministrativo,
+    netoEstimado,
+    montoSolicitud,
+  } = liquidacion
+  return `
+    <div style="background:#eef2ff;border-radius:10px;padding:18px 20px;margin:0 0 20px 0;border:1px solid #c7d2fe;">
+      <p style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.6px;color:#3730a3;margin:0 0 12px 0;">
+        Comercial y liquidación estimada
+      </p>
+      <p style="font-size:14px;line-height:1.6;color:#1e1b4b;margin:0 0 14px 0;">
+        <strong>Comercial asignado a tus gestiones:</strong> ${escapeHtml(comercialNombre || '—')}<br/>
+        <span style="color:#4b5563;">Comisión aplicada sobre el monto de esta gestión: <strong>${escapeHtml(String(porcentajeComision ?? ''))}%</strong> anual de referencia.</span>
+      </p>
+      <table style="width:100%;font-size:14px;border-collapse:collapse;">
+        <tr><td style="color:#4338ca;padding:5px 0;">Monto de la gestión</td><td style="text-align:right;font-weight:600;">${fmtArs(montoSolicitud)}</td></tr>
+        <tr><td style="color:#4338ca;padding:5px 0;">Comisión (${escapeHtml(String(porcentajeComision ?? ''))}%)</td><td style="text-align:right;font-weight:600;">− ${fmtArs(montoComision)}</td></tr>
+        <tr><td style="color:#4338ca;padding:5px 0;">Subtotal</td><td style="text-align:right;font-weight:600;">${fmtArs(montoTrasComision)}</td></tr>
+        <tr><td style="color:#4338ca;padding:5px 0;">Gasto administrativo</td><td style="text-align:right;font-weight:600;">− ${fmtArs(gastoAdministrativo)}</td></tr>
+        <tr><td style="color:#1e1b4b;padding:10px 0 0 0;font-weight:600;border-top:1px solid #c7d2fe;">Total estimado a depositarte</td><td style="text-align:right;font-weight:700;padding:10px 0 0 0;border-top:1px solid #c7d2fe;font-size:16px;color:#1e1b4b;">${fmtArs(netoEstimado)}</td></tr>
+      </table>
+      <p style="font-size:12px;color:#6366f1;margin:12px 0 0 0;line-height:1.5;">
+        Sin comercial asignado en tu cuenta se usa <strong>Pago Nacional</strong> con el porcentaje configurado por la empresa. Los importes son estimados según la configuración vigente al momento de este email.
+      </p>
+    </div>
+  `
+}
+
 /**
  * @param {string} kind
  * @param {string} baseUrl - URL pública del sitio (logo y enlaces)
@@ -104,12 +145,14 @@ function buildReset(baseUrl, { email, nombre, linkReset }) {
   }
 }
 
-function buildConfirmacion(baseUrl, { email, nombre, solicitud }) {
+function buildConfirmacion(baseUrl, { email, nombre, solicitud, liquidacion }) {
+  const liqBlock = liquidacionEmailBlock(liquidacion)
   const innerHtml = `
     <h2 style="font-size:22px;font-weight:600;margin:0 0 12px 0;">Solicitud recibida</h2>
     <p style="font-size:15px;line-height:1.7;color:#4b5563;margin:0 0 20px 0;">
       Hola ${escapeHtml(nombre)}, tu solicitud fue recibida correctamente y está siendo procesada.
     </p>
+    ${liqBlock}
     <div style="background:#f7f7f5;border-radius:10px;padding:18px 20px;margin:0 0 20px 0;">
       <table style="width:100%;font-size:14px;border-collapse:collapse;">
         <tr><td style="color:#6b7280;padding:6px 0;">N° solicitud</td><td style="text-align:right;font-weight:600;">${escapeHtml(solicitud.numero)}</td></tr>
@@ -184,7 +227,7 @@ function buildAdmin(baseUrl, { adminEmail, solicitud, camionero, attachments }) 
   }
 }
 
-function buildAprobacion(baseUrl, { email, nombre, solicitud, cuenta, attachments }) {
+function buildAprobacion(baseUrl, { email, nombre, solicitud, cuenta, liquidacion, attachments }) {
   let pdfFooter = ''
   if (attachments?.length) {
     pdfFooter = `
@@ -197,11 +240,13 @@ function buildAprobacion(baseUrl, { email, nombre, solicitud, cuenta, attachment
       No se pudo adjuntar el PDF automáticamente. Los T&amp;C quedan guardados en tu solicitud en el sistema.
     </p>`
   }
+  const liqBlock = liquidacionEmailBlock(liquidacion)
   const innerHtml = `
     <h2 style="font-size:22px;font-weight:600;margin:0 0 12px 0;">Tu solicitud fue aprobada</h2>
     <p style="font-size:15px;line-height:1.7;color:#4b5563;margin:0 0 20px 0;">
       Hola ${escapeHtml(nombre || '')}, tu solicitud fue aprobada. Endosá o enviá el echeq al <strong>CUIT</strong> indicado; el <strong>librador</strong> es el que cargaste en tu solicitud.
     </p>
+    ${liqBlock}
     <div style="background:#f7f7f5;border-radius:10px;padding:18px 20px;margin:0 0 16px 0;">
       <table style="width:100%;font-size:14px;border-collapse:collapse;">
         <tr><td style="color:#6b7280;padding:6px 0;">N° solicitud</td><td style="text-align:right;font-weight:600;">${escapeHtml(solicitud.numero)}</td></tr>

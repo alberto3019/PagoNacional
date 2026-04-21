@@ -25,8 +25,8 @@ export async function enviarVerificacionEmail(email, nombre, linkVerificacion) {
   await postEmail('verificacion', { email, nombre, linkVerificacion })
 }
 
-export async function enviarConfirmacionSolicitud(email, nombre, solicitud) {
-  await postEmail('confirmacion', { email, nombre, solicitud })
+export async function enviarConfirmacionSolicitud(email, nombre, solicitud, liquidacion) {
+  await postEmail('confirmacion', { email, nombre, solicitud, liquidacion: liquidacion || null })
 }
 
 export async function enviarNotificacionAdmin(adminEmail, solicitud, camionero) {
@@ -48,7 +48,7 @@ export async function enviarNotificacionAdmin(adminEmail, solicitud, camionero) 
   })
 }
 
-export async function enviarAprobacionConCuenta(email, nombre, solicitud, cuenta) {
+export async function enviarAprobacionConCuenta(email, nombre, solicitud, cuenta, liquidacion) {
   if (!email) return
   const attachments = []
   const b64 = await terminosHtmlToPdfBase64(solicitud.terminos_html)
@@ -65,6 +65,7 @@ export async function enviarAprobacionConCuenta(email, nombre, solicitud, cuenta
     nombre,
     solicitud,
     cuenta,
+    liquidacion: liquidacion || null,
     ...(attachments.length ? { attachments } : {}),
   })
 }

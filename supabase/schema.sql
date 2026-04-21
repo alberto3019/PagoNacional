@@ -114,11 +114,37 @@ CREATE TABLE prestamista_config (
 
 INSERT INTO prestamista_config (id) VALUES (1) ON CONFLICT (id) DO NOTHING;
 
+-- Comerciales (personas con % de comisión por gestión; referencia anual en negocio)
+CREATE TABLE comerciales (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  nombre TEXT NOT NULL,
+  apellido TEXT NOT NULL,
+  porcentaje_comision NUMERIC(6, 2) NOT NULL DEFAULT 0
+    CHECK (porcentaje_comision >= 0 AND porcentaje_comision <= 100),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Comisión por defecto (Pago Nacional) y gasto administrativo fijo por gestión
+CREATE TABLE finanzas_config (
+  id SMALLINT PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+  comision_pagonacional_pct NUMERIC(6, 2) NOT NULL DEFAULT 10
+    CHECK (comision_pagonacional_pct >= 0 AND comision_pagonacional_pct <= 100),
+  gasto_administrativo NUMERIC(14, 2) NOT NULL DEFAULT 0
+    CHECK (gasto_administrativo >= 0),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+INSERT INTO finanzas_config (id) VALUES (1) ON CONFLICT (id) DO NOTHING;
+
+ALTER TABLE camioneros ADD COLUMN IF NOT EXISTS comercial_id UUID REFERENCES comerciales(id) ON DELETE SET NULL;
+
 -- Row Level Security
 ALTER TABLE camioneros ENABLE ROW LEVEL SECURITY;
 ALTER TABLE solicitudes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE cuentas_destino ENABLE ROW LEVEL SECURITY;
 ALTER TABLE prestamista_config ENABLE ROW LEVEL SECURITY;
+ALTER TABLE comerciales ENABLE ROW LEVEL SECURITY;
+ALTER TABLE finanzas_config ENABLE ROW LEVEL SECURITY;
 
 -- La SPA usa la clave "anon" en el navegador (VITE_SUPABASE_ANON_KEY).
 -- Sin políticas para el rol anon, Postgres bloquea SELECT/INSERT/UPDATE.
@@ -135,6 +161,12 @@ CREATE POLICY anon_cuentas_destino_all
 
 CREATE POLICY anon_prestamista_config_all
   ON prestamista_config FOR ALL TO anon USING (true) WITH CHECK (true);
+
+CREATE POLICY anon_comerciales_all
+  ON comerciales FOR ALL TO anon USING (true) WITH CHECK (true);
+
+CREATE POLICY anon_finanzas_config_all
+  ON finanzas_config FOR ALL TO anon USING (true) WITH CHECK (true);
 
 -- Storage bucket para imagenes DNI (ignorar si ya existe)
 INSERT INTO storage.buckets (id, name, public)

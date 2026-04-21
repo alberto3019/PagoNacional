@@ -345,6 +345,7 @@
     <div class="tabs">
       <button class="tab active" onclick="setTab('solicitudes',this)">Solicitudes</button>
       <button class="tab" onclick="setTab('camioneros',this)">Camioneros</button>
+      <button class="tab" onclick="setTab('comercial',this)">Comercial</button>
       <button class="tab" onclick="setTab('cuentas',this)">Cuentas</button>
       <button class="tab" onclick="setTab('terminos',this)">Términos</button>
     </div>
@@ -413,15 +414,86 @@
               <th>CUIT</th>
               <th>Email</th>
               <th>Celular</th>
+              <th>Comercial</th>
               <th>Email verificado</th>
               <th>Registro</th>
               <th></th>
             </tr>
           </thead>
           <tbody id="tbody-camioneros">
-            <tr><td colspan="9" class="empty">Cargando...</td></tr>
+            <tr><td colspan="10" class="empty">Cargando...</td></tr>
           </tbody>
         </table>
+      </div>
+    </div>
+
+    <!-- TAB COMERCIAL (comerciales + finanzas globales) -->
+    <div id="tab-comercial" style="display:none">
+      <div class="table-wrap" style="padding:22px 26px; margin-bottom:16px;">
+        <div class="modal-section" style="margin-top:0;">Gastos y comisión por defecto</div>
+        <p style="font-size:13px;color:var(--text-muted);margin:0 0 14px;line-height:1.55;max-width:640px;">
+          El <strong>gasto administrativo</strong> es un monto fijo en pesos que se descuenta de <strong>cada gestión</strong> al calcular lo que recibe el camionero.
+          Si el camionero no tiene comercial asignado, se usa <strong>Pago Nacional</strong> con el porcentaje indicado abajo.
+        </p>
+        <div class="modal-form" style="max-width:480px;">
+          <div>
+            <label for="fin-pn-pct">Comisión Pago Nacional (%)</label>
+            <input id="fin-pn-pct" type="number" min="0" max="100" step="0.01" placeholder="10" />
+          </div>
+          <div>
+            <label for="fin-gasto">Gasto administrativo por gestión ($)</label>
+            <input id="fin-gasto" type="number" min="0" step="0.01" placeholder="0" />
+          </div>
+        </div>
+        <div style="margin-top:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+          <button type="button" class="btn-export" onclick="guardarFinanzasAdmin()"
+            style="background:var(--navy);color:#fff;border-color:var(--navy);font-weight:500;">
+            Guardar finanzas
+          </button>
+          <span id="fin-msg" style="font-size:13px;color:var(--success-text);display:none;">Guardado.</span>
+        </div>
+      </div>
+      <div class="table-wrap" style="padding:22px 26px;">
+        <div class="modal-section" style="margin-top:0;">Personas comerciales</div>
+        <p style="font-size:13px;color:var(--text-muted);margin:0 0 14px;line-height:1.55;max-width:640px;">
+          Cada comercial tiene un porcentaje de comisión (referencia anual) que se aplica sobre el monto de cada gestión. En <strong>Camioneros</strong> podés asignar un comercial a cada uno.
+        </p>
+        <div class="modal-form" style="max-width:520px; margin-bottom:20px;">
+          <div class="field-row" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div>
+              <label for="co-nombre">Nombre</label>
+              <input id="co-nombre" type="text" autocomplete="given-name" placeholder="Nombre" />
+            </div>
+            <div>
+              <label for="co-apellido">Apellido</label>
+              <input id="co-apellido" type="text" autocomplete="family-name" placeholder="Apellido" />
+            </div>
+          </div>
+          <div>
+            <label for="co-pct">Comisión % (sobre el monto de cada gestión)</label>
+            <input id="co-pct" type="number" min="0" max="100" step="0.01" placeholder="Ej. 8" />
+          </div>
+          <button type="button" class="btn-export" onclick="agregarComercialAdmin()"
+            style="background:var(--navy);color:#fff;border-color:var(--navy);font-weight:500;margin-top:4px;">
+            Agregar comercial
+          </button>
+        </div>
+        <div class="table-wrap" style="border:none;padding:0;">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Apellido</th>
+                <th>Comisión %</th>
+                <th>Alta</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="tbody-comerciales">
+              <tr><td colspan="5" class="empty">Cargando...</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
 
@@ -536,6 +608,20 @@
       <div class="detail-row"><span class="detail-label">Email</span><span class="detail-val" id="m-email"></span></div>
       <div class="detail-row"><span class="detail-label">Celular</span><span class="detail-val" id="m-celular"></span></div>
 
+      <div id="cam-comercial-wrap" style="display:none;">
+        <div class="modal-section">Comercial asignado</div>
+        <p style="font-size:12px;color:var(--text-muted);margin:-4px 0 10px;line-height:1.45;">
+          Aplica a todas las gestiones de este camionero. Si no elegís uno, se usa <strong>Pago Nacional</strong> con la comisión por defecto (pestaña Comercial).
+        </p>
+        <select id="cam-comercial-select" style="width:100%; padding:9px 12px; border:1px solid var(--border); border-radius:8px; font-size:13px; font-family:'DM Sans',sans-serif; margin-bottom:10px;">
+          <option value="">Pago Nacional (por defecto)</option>
+        </select>
+        <button type="button" class="btn-export" onclick="guardarComercialCamionero()"
+          style="background:var(--navy);color:#fff;border-color:var(--navy);font-weight:500;">
+          Guardar comercial
+        </button>
+      </div>
+
       <div class="modal-section">Documentacion</div>
       <div class="imgs-row">
         <div class="img-block">
@@ -635,8 +721,11 @@
 <script type="module">
   import {
     listarSolicitudes, listarCamioneros, actualizarEstado, obtenerStats, obtenerSolicitudesDeCamionero,
-    listarCuentasDestino, crearCuentaDestino, actualizarCuentaDestino, eliminarCuentaDestino, aprobarSolicitudConCuenta
+    listarCuentasDestino, crearCuentaDestino, actualizarCuentaDestino, eliminarCuentaDestino, aprobarSolicitudConCuenta,
+    listarComerciales, crearComercial, eliminarComercial, obtenerFinanzasConfig, guardarFinanzasConfig,
+    actualizarComercialCamionero,
   } from '../lib/supabase.js'
+  import { armarLiquidacionParaEmail } from '../lib/liquidacion.js'
   import { exportarSolicitudes, exportarCamioneros } from '../lib/exportExcel.js'
   import { enviarAprobacionConCuenta } from '../lib/emails.js'
   import {
@@ -655,6 +744,8 @@
   let cuentaEditandoId = null
   let modalSolicitudId = null
   let camSolicitudesCache = []
+  let comercialesCache = []
+  let modalCamioneroId = null
 
   // ── AUTH ──────────────────────────────────────────────────────
   // El admin entra por el login general (/login).
@@ -694,10 +785,12 @@
     document.getElementById('tab-solicitudes').style.display = name === 'solicitudes' ? 'block' : 'none'
     document.getElementById('tab-camioneros').style.display  = name === 'camioneros'  ? 'block' : 'none'
     document.getElementById('tab-cuentas').style.display     = name === 'cuentas' ? 'block' : 'none'
+    document.getElementById('tab-comercial').style.display   = name === 'comercial' ? 'block' : 'none'
     document.getElementById('tab-terminos').style.display    = name === 'terminos' ? 'block' : 'none'
     if (name === 'camioneros') cargarCamioneros()
     if (name === 'cuentas') cargarCuentas()
     if (name === 'terminos') cargarTerminosEmpresaForm()
+    if (name === 'comercial') cargarTabComercial()
   }
 
   window.cargarTerminosEmpresaForm = async function() {
@@ -736,7 +829,127 @@
       cargarStats(),
       cargarSolicitudes(),
       cargarCuentas(),
+      cargarComercialesLista(),
     ])
+  }
+
+  async function cargarComercialesLista() {
+    try {
+      comercialesCache = await listarComerciales()
+    } catch (e) {
+      console.warn('Comerciales:', e)
+      comercialesCache = []
+    }
+  }
+
+  window.cargarTabComercial = async function() {
+    document.getElementById('fin-msg').style.display = 'none'
+    try {
+      const f = await obtenerFinanzasConfig()
+      document.getElementById('fin-pn-pct').value = f.comision_pagonacional_pct ?? 10
+      document.getElementById('fin-gasto').value = f.gasto_administrativo ?? 0
+    } catch (e) {
+      console.error(e)
+    }
+    const tb = document.getElementById('tbody-comerciales')
+    tb.innerHTML = '<tr><td colspan="5" class="empty">Cargando...</td></tr>'
+    try {
+      await cargarComercialesLista()
+      renderTablaComerciales()
+    } catch (e) {
+      tb.innerHTML = `<tr><td colspan="5" class="empty">${e.message || 'Error'}</td></tr>`
+    }
+  }
+
+  function renderTablaComerciales() {
+    const tb = document.getElementById('tbody-comerciales')
+    const rows = comercialesCache || []
+    if (!rows.length) {
+      tb.innerHTML = '<tr><td colspan="5" class="empty">No hay comerciales cargados.</td></tr>'
+      return
+    }
+    tb.innerHTML = rows.map(c => `
+      <tr>
+        <td>${escapeHtml(c.nombre || '')}</td>
+        <td>${escapeHtml(c.apellido || '')}</td>
+        <td>${escapeHtml(String(c.porcentaje_comision ?? ''))}</td>
+        <td>${c.created_at ? new Date(c.created_at).toLocaleDateString('es-AR') : ''}</td>
+        <td><button type="button" class="btn-ver danger" onclick="eliminarComercialAdmin('${c.id}')">Eliminar</button></td>
+      </tr>
+    `).join('')
+  }
+
+  function escapeHtml(s) {
+    return String(s ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/"/g, '&quot;')
+  }
+
+  window.guardarFinanzasAdmin = async function() {
+    document.getElementById('fin-msg').style.display = 'none'
+    try {
+      await guardarFinanzasConfig({
+        comision_pagonacional_pct: document.getElementById('fin-pn-pct').value,
+        gasto_administrativo: document.getElementById('fin-gasto').value,
+      })
+      const m = document.getElementById('fin-msg')
+      m.style.display = 'inline'
+      setTimeout(() => { m.style.display = 'none' }, 3500)
+    } catch (e) {
+      alert(e?.message || 'No se pudo guardar.')
+    }
+  }
+
+  window.agregarComercialAdmin = async function() {
+    const nombre = document.getElementById('co-nombre').value.trim()
+    const apellido = document.getElementById('co-apellido').value.trim()
+    const porcentaje_comision = document.getElementById('co-pct').value
+    try {
+      await crearComercial({ nombre, apellido, porcentaje_comision })
+      document.getElementById('co-nombre').value = ''
+      document.getElementById('co-apellido').value = ''
+      document.getElementById('co-pct').value = ''
+      await cargarComercialesLista()
+      renderTablaComerciales()
+    } catch (e) {
+      alert(e?.message || 'Error al crear.')
+    }
+  }
+
+  window.eliminarComercialAdmin = async function(id) {
+    if (!id || !confirm('¿Eliminar este comercial? Los camioneros que lo tengan asignado pasarán a Pago Nacional por defecto.')) return
+    try {
+      await eliminarComercial(id)
+      await cargarComercialesLista()
+      renderTablaComerciales()
+    } catch (e) {
+      alert(e?.message || 'Error al eliminar.')
+    }
+  }
+
+  function rellenarSelectComerciales(selectEl, comercialIdActual) {
+    const opts =
+      '<option value="">Pago Nacional (por defecto)</option>' +
+      (comercialesCache || [])
+        .map(c => `<option value="${c.id}">${escapeHtml(`${c.nombre || ''} ${c.apellido || ''}`.trim())} — ${escapeHtml(String(c.porcentaje_comision ?? ''))}%</option>`)
+        .join('')
+    selectEl.innerHTML = opts
+    selectEl.value = comercialIdActual || ''
+  }
+
+  window.guardarComercialCamionero = async function() {
+    if (!modalCamioneroId) return
+    const sel = document.getElementById('cam-comercial-select')
+    const val = sel.value || null
+    try {
+      await actualizarComercialCamionero(modalCamioneroId, val)
+      alert('Comercial guardado.')
+      await cargarCamioneros()
+      closeModal()
+    } catch (e) {
+      alert(e?.message || 'Error al guardar.')
+    }
   }
 
   async function cargarStats() {
@@ -822,8 +1035,8 @@
             <td><span class="badge ${cls}">${estadoLabel}</span></td>
             <td>${fecha}</td>
             <td style="white-space:nowrap">
-              <button class="btn-ver" onclick="openModal(${i})">Ver</button>
-              <button class="btn-ver" style="margin-left:6px" onclick="openTerminos(${i})">T&amp;C</button>
+              <button class="btn-ver" onclick="openModal('${s.id}')">Ver</button>
+              <button class="btn-ver" style="margin-left:6px" onclick="openTerminos('${s.id}')">T&amp;C</button>
             </td>
           </tr>`
       }).join('')
@@ -833,8 +1046,8 @@
     }
   }
 
-  window.openTerminos = function(i) {
-    const s = solicitudesCache[i]
+  window.openTerminos = function(id) {
+    const s = solicitudesCache.find(x => x.id === id)
     if (!s?.terminos_html) {
       alert('Esta solicitud no tiene el contrato T&C guardado (solicitudes anteriores al cambio o sin columnas en la base).')
       return
@@ -871,12 +1084,15 @@
     if (z?.classList.contains('open')) cerrarZoomDni()
   })
 
-  window.openModal = function(i) {
+  window.openModal = function(id) {
     cerrarZoomDni()
-    const s   = solicitudesCache[i]
+    const s = solicitudesCache.find(x => x.id === id)
+    if (!s) return
     const cam = s.camioneros || {}
     modalSolicitudId = s.id
+    modalCamioneroId = null
 
+    document.getElementById('cam-comercial-wrap').style.display = 'none'
     document.getElementById('modal-solicitud').style.display = 'block'
     document.getElementById('modal-camionero-solicitudes').style.display = 'none'
 
@@ -936,6 +1152,8 @@
     cerrarZoomDni()
     document.getElementById('overlay').classList.remove('open')
     modalSolicitudId = null
+    modalCamioneroId = null
+    document.getElementById('cam-comercial-wrap').style.display = 'none'
   }
 
   window.cambiarEstado = async function(estado) {
@@ -952,12 +1170,20 @@
         const row = solicitudesCache.find(s => s.id === modalSolicitudId)
         const cam = row?.camioneros || {}
         const solicitudMail = { ...(row || {}), ...(updated || {}) }
+        let liquidacion = null
+        try {
+          const fin = await obtenerFinanzasConfig()
+          liquidacion = armarLiquidacionParaEmail(cam, fin, solicitudMail.monto)
+        } catch (e) {
+          console.warn('Liquidación email aprobación:', e)
+        }
         await Promise.allSettled([
           enviarAprobacionConCuenta(
             cam.email,
             `${cam.nombre || ''} ${cam.apellido || ''}`.trim(),
             solicitudMail,
-            cuenta
+            cuenta,
+            liquidacion
           ),
         ])
       } else {
@@ -1075,7 +1301,7 @@
   window.cargarCamioneros = async function() {
     const q = document.getElementById('f-cam-busqueda')?.value.toLowerCase() || ''
     document.getElementById('tbody-camioneros').innerHTML =
-      '<tr><td colspan="9" class="empty">Cargando...</td></tr>'
+      '<tr><td colspan="10" class="empty">Cargando...</td></tr>'
     try {
       const data = await listarCamioneros()
       camioneroCache = data
@@ -1088,10 +1314,15 @@
 
       const tb = document.getElementById('tbody-camioneros')
       if (!filtered.length) {
-        tb.innerHTML = '<tr><td colspan="9" class="empty">No se encontraron camioneros.</td></tr>'
+        tb.innerHTML = '<tr><td colspan="10" class="empty">No se encontraron camioneros.</td></tr>'
         return
       }
-      tb.innerHTML = filtered.map((c, i) => `
+      tb.innerHTML = filtered.map(c => {
+        const co = c.comerciales
+        const comercialLbl = co?.nombre != null
+          ? `${co.nombre} ${co.apellido || ''} (${co.porcentaje_comision}%)`.trim()
+          : 'Pago Nacional'
+        return `
         <tr>
           <td>${c.nombre}</td>
           <td>${c.apellido}</td>
@@ -1099,19 +1330,21 @@
           <td class="mono">${c.cuit}</td>
           <td>${c.email}</td>
           <td>${c.celular}</td>
+          <td style="font-size:12px;max-width:160px;">${comercialLbl}</td>
           <td><span class="badge ${c.email_verificado ? 'aprobado' : 'pendiente'}">${c.email_verificado ? 'Verificado' : 'Pendiente'}</span></td>
           <td>${new Date(c.created_at).toLocaleDateString('es-AR')}</td>
-          <td><button class="btn-ver" onclick="openCamioneroModal(${i})">Ver</button></td>
-        </tr>`).join('')
+          <td><button class="btn-ver" onclick="openCamioneroModal('${c.id}')">Ver</button></td>
+        </tr>`
+      }).join('')
     } catch(e) {
       document.getElementById('tbody-camioneros').innerHTML =
-        `<tr><td colspan="9" class="empty">Error: ${e.message}</td></tr>`
+        `<tr><td colspan="10" class="empty">Error: ${e.message}</td></tr>`
     }
   }
 
-  window.openCamioneroModal = async function(i) {
+  window.openCamioneroModal = async function(camioneroId) {
     cerrarZoomDni()
-    const c = camioneroCache[i]
+    const c = camioneroCache.find(x => x.id === camioneroId)
     if (!c) return
 
     document.getElementById('modal-solicitud').style.display = 'none'
@@ -1123,6 +1356,12 @@
     document.getElementById('btn-aprobar').style.display = 'none'
     document.getElementById('btn-rechazar').style.display = 'none'
     modalSolicitudId = null
+    modalCamioneroId = c.id
+    document.getElementById('cam-comercial-wrap').style.display = 'block'
+    try {
+      if (!comercialesCache.length) await cargarComercialesLista()
+    } catch (e) { /* noop */ }
+    rellenarSelectComerciales(document.getElementById('cam-comercial-select'), c.comercial_id)
 
     document.getElementById('m-nombre').textContent  = `${c.nombre || ''} ${c.apellido || ''}`.trim()
     document.getElementById('m-dni').textContent     = c.dni || ''

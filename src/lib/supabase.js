@@ -46,6 +46,104 @@ export async function obtenerPrestamistaConfig() {
   }
 }
 
+// ─── FINANZAS (comisión Pago Nacional + gasto admin por gestión) ─
+
+export async function obtenerFinanzasConfig() {
+  requireSupabase()
+  const { data, error } = await supabase.from('finanzas_config').select('*').eq('id', 1).maybeSingle()
+  if (error) throw error
+  if (!data) {
+    return { comision_pagonacional_pct: 10, gasto_administrativo: 0 }
+  }
+  return {
+    comision_pagonacional_pct: Number(data.comision_pagonacional_pct) ?? 10,
+    gasto_administrativo: Number(data.gasto_administrativo) ?? 0,
+  }
+}
+
+export async function guardarFinanzasConfig(datos) {
+  requireSupabase()
+  const pct = Number(datos?.comision_pagonacional_pct)
+  const gasto = Number(datos?.gasto_administrativo)
+  if (!Number.isFinite(pct) || pct < 0 || pct > 100) {
+    throw new Error('La comisión Pago Nacional debe ser un porcentaje entre 0 y 100.')
+  }
+  if (!Number.isFinite(gasto) || gasto < 0) {
+    throw new Error('El gasto administrativo debe ser un monto mayor o igual a 0.')
+  }
+  const row = {
+    id: 1,
+    comision_pagonacional_pct: pct,
+    gasto_administrativo: gasto,
+    updated_at: new Date().toISOString(),
+  }
+  const { data, error } = await supabase.from('finanzas_config').upsert(row, { onConflict: 'id' }).select().single()
+  if (error) throw error
+  return {
+    comision_pagonacional_pct: Number(data.comision_pagonacional_pct) ?? 10,
+    gasto_administrativo: Number(data.gasto_administrativo) ?? 0,
+  }
+}
+
+// ─── COMERCIALES ───────────────────────────────────────────────
+
+export async function listarComerciales() {
+  requireSupabase()
+  const { data, error } = await supabase.from('comerciales').select('*').order('created_at', { ascending: false })
+  if (error) throw error
+  return data || []
+}
+
+export async function crearComercial(datos) {
+  requireSupabase()
+  const nombre = String(datos?.nombre ?? '').trim()
+  const apellido = String(datos?.apellido ?? '').trim()
+  const porcentaje_comision = Number(datos?.porcentaje_comision)
+  if (!nombre || !apellido) throw new Error('Nombre y apellido del comercial son obligatorios.')
+  if (!Number.isFinite(porcentaje_comision) || porcentaje_comision < 0 || porcentaje_comision > 100) {
+    throw new Error('El porcentaje de comisión debe estar entre 0 y 100.')
+  }
+  const { data, error } = await supabase
+    .from('comerciales')
+    .insert([{ nombre, apellido, porcentaje_comision }])
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function actualizarComercial(comercialId, datos) {
+  requireSupabase()
+  const nombre = String(datos?.nombre ?? '').trim()
+  const apellido = String(datos?.apellido ?? '').trim()
+  const porcentaje_comision = Number(datos?.porcentaje_comision)
+  if (!nombre || !apellido) throw new Error('Nombre y apellido del comercial son obligatorios.')
+  if (!Number.isFinite(porcentaje_comision) || porcentaje_comision < 0 || porcentaje_comision > 100) {
+    throw new Error('El porcentaje de comisión debe estar entre 0 y 100.')
+  }
+  const { data, error } = await supabase
+    .from('comerciales')
+    .update({ nombre, apellido, porcentaje_comision })
+    .eq('id', comercialId)
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function eliminarComercial(comercialId) {
+  requireSupabase()
+  const { error } = await supabase.from('comerciales').delete().eq('id', comercialId)
+  if (error) throw error
+}
+
+export async function actualizarComercialCamionero(camioneroId, comercialId) {
+  requireSupabase()
+  const payload = { comercial_id: comercialId || null }
+  const { error } = await supabase.from('camioneros').update(payload).eq('id', camioneroId)
+  if (error) throw error
+}
+
 export async function guardarPrestamistaConfig(datos) {
   requireSupabase()
   const row = {
@@ -81,7 +179,11 @@ export async function registrarCamionero(datos) {
 
 export async function obtenerCamioneroPorEmail(email) {
   requireSupabase()
-  const { data, error } = await supabase.from('camioneros').select('*').eq('email', email).maybeSingle()
+  const { data, error } = await supabase
+    .from('camioneros')
+    .select('*, comerciales(id, nombre, apellido, porcentaje_comision)')
+    .eq('email', email)
+    .maybeSingle()
   if (error) throw error
   if (!data) {
     const err = new Error('No encontrado')
@@ -188,7 +290,7 @@ export async function listarCamioneros() {
   requireSupabase()
   const { data, error } = await supabase
     .from('camioneros')
-    .select('*, solicitudes(count)')
+    .select('*, solicitudes(count), comerciales(id, nombre, apellido, porcentaje_comision)')
     .order('created_at', { ascending: false })
   if (error) throw error
   return data
@@ -214,7 +316,8 @@ export async function listarSolicitudes({ busqueda, estado, desde, hasta } = {})
     .select(`
       *,
       camioneros (
-        nombre, apellido, dni, cuit, celular, email
+        nombre, apellido, dni, cuit, celular, email, comercial_id,
+        comerciales ( id, nombre, apellido, porcentaje_comision )
       )
     `)
     .order('created_at', { ascending: false })

@@ -11,6 +11,12 @@ export function exportarSolicitudes(solicitudes, nombreArchivo = 'pago-nacional-
     'CUIT':           s.camioneros?.cuit || '',
     'Email':          s.camioneros?.email || '',
     'Celular':        s.camioneros?.celular || '',
+    'Comercial': (() => {
+      const co = s.camioneros?.comerciales
+      if (co?.nombre != null) return `${co.nombre || ''} ${co.apellido || ''}`.trim()
+      return 'Pago Nacional (por defecto)'
+    })(),
+    '% comisión': s.camioneros?.comerciales?.porcentaje_comision ?? '',
     'CBU/CVU solicitud': s.cbu_cvu,
     'Librador (echeq)': s.librador || '',
     'CUIT asignación': s.cuenta_destino_cuit || '',
@@ -27,6 +33,7 @@ export function exportarSolicitudes(solicitudes, nombreArchivo = 'pago-nacional-
   ws['!cols'] = [
     { wch: 18 }, { wch: 16 }, { wch: 16 }, { wch: 16 },
     { wch: 14 }, { wch: 18 }, { wch: 26 }, { wch: 18 },
+    { wch: 22 }, { wch: 10 },
     { wch: 22 }, { wch: 14 }, { wch: 20 }, { wch: 14 },
     { wch: 16 }, { wch: 14 }, { wch: 12 }, { wch: 18 },
   ]
@@ -46,12 +53,19 @@ export function exportarCamioneros(camioneros) {
     'Celular':          c.celular,
     'Email verificado': c.email_verificado ? 'Si' : 'No',
     'Fecha registro':   new Date(c.created_at).toLocaleDateString('es-AR'),
+    'Comercial': (() => {
+      const co = c.comerciales
+      if (co?.nombre != null) return `${co.nombre || ''} ${co.apellido || ''}`.trim()
+      return 'Pago Nacional (por defecto)'
+    })(),
+    '% comisión comercial': c.comerciales?.porcentaje_comision ?? '',
   }))
 
   const ws = XLSX.utils.json_to_sheet(filas)
   ws['!cols'] = [
     { wch: 16 }, { wch: 16 }, { wch: 14 }, { wch: 18 },
     { wch: 26 }, { wch: 18 }, { wch: 16 }, { wch: 16 },
+    { wch: 28 }, { wch: 12 },
   ]
 
   const wb = XLSX.utils.book_new()
