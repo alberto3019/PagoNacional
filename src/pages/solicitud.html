@@ -356,9 +356,13 @@
       return
     }
 
-    const srcFrente = fileFrente ? 'file' : defaultDniFrenteUrl
-    const srcDorso  = fileDorso ? 'file' : defaultDniDorsoUrl
-    if (!srcFrente || !srcDorso) {
+    const prevFrente = String(document.getElementById('preview-frente')?.getAttribute('src') || '').trim()
+    const prevDorso = String(document.getElementById('preview-dorso')?.getAttribute('src') || '').trim()
+
+    const hasFrente = !!fileFrente || !!defaultDniFrenteUrl || !!prevFrente
+    const hasDorso = !!fileDorso || !!defaultDniDorsoUrl || !!prevDorso
+
+    if (!hasFrente || !hasDorso) {
       alertEl.className = 'alert error'
       alertEl.textContent = 'Tenés que cargar el frente y el dorso del DNI (o tenerlas ya guardadas en tu cuenta).'
       return
