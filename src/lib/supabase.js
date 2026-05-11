@@ -284,6 +284,30 @@ export async function actualizarDomicilioCamionero(camioneroId, domicilio) {
   if (error) throw error
 }
 
+export async function actualizarDatosCamionero(camioneroId, datos) {
+  requireSupabase()
+  const payload = {}
+
+  const nombre = datos?.nombre != null ? String(datos.nombre).trim() : ''
+  const apellido = datos?.apellido != null ? String(datos.apellido).trim() : ''
+  const celular = datos?.celular != null ? String(datos.celular).trim() : ''
+  const dni = datos?.dni != null ? String(datos.dni).replace(/\D/g, '').trim() : ''
+  const cuit = datos?.cuit != null ? String(datos.cuit).replace(/\D/g, '').trim() : ''
+  const email = datos?.email != null ? String(datos.email).trim().toLowerCase() : ''
+
+  if (datos?.nombre != null) payload.nombre = nombre
+  if (datos?.apellido != null) payload.apellido = apellido
+  if (datos?.celular != null) payload.celular = celular
+  if (datos?.dni != null) payload.dni = dni
+  if (datos?.cuit != null) payload.cuit = cuit
+  if (datos?.email != null) payload.email = email
+
+  if (!Object.keys(payload).length) return
+
+  const { error } = await supabase.from('camioneros').update(payload).eq('id', camioneroId)
+  if (error) throw error
+}
+
 export async function verificarEmail(camioneroId) {
   requireSupabase()
   const { error } = await supabase

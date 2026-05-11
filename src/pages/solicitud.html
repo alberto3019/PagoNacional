@@ -500,6 +500,7 @@
     alertEl.className = 'alert'
     alertEl.textContent = ''
 
+    // Firma obligatoria (siempre), antes de cualquier envío.
     if (!formEl.checkValidity()) {
       formEl.reportValidity()
       return
@@ -508,6 +509,11 @@
     if (isFirmaCanvasBlank()) {
       alertEl.className = 'alert error'
       alertEl.textContent = 'Tenés que firmar con el dedo o el mouse en el recuadro de firma digital.'
+      try {
+        document.querySelector('.sig-canvas-wrap')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      } catch {
+        /* noop */
+      }
       return
     }
 

@@ -174,6 +174,26 @@
     </div>
 
     <div class="card" style="margin-top:14px">
+      <div class="section">Editar datos (si están vacíos)</div>
+      <p class="dni-hint">
+        Si algún dato figura como “—”, podés completarlo acá. Si ya está cargado, queda bloqueado para evitar cambios accidentales.
+      </p>
+      <div class="field">
+        <label for="edit-nombre">Nombre</label>
+        <input type="text" id="edit-nombre" autocomplete="given-name" />
+      </div>
+      <div class="field">
+        <label for="edit-apellido">Apellido</label>
+        <input type="text" id="edit-apellido" autocomplete="family-name" />
+      </div>
+      <div class="field" style="margin-bottom:14px">
+        <label for="edit-cel">Celular</label>
+        <input type="text" id="edit-cel" inputmode="tel" autocomplete="tel" />
+      </div>
+      <button type="button" class="btn-primary" id="btn-guardar-datos" onclick="guardarDatosPerfil()">Guardar datos</button>
+    </div>
+
+    <div class="card" style="margin-top:14px">
       <div class="section">Domicilio</div>
       <p class="dni-hint">Si lo guardás acá, se va a completar solo en nuevas solicitudes. Podés actualizarlo cuando quieras.</p>
       <div class="field" style="margin-bottom:14px">
@@ -234,6 +254,7 @@
       actualizarDniFotosCamionero,
       actualizarCbuCvuCamionero,
       actualizarDomicilioCamionero,
+      actualizarDatosCamionero,
     } from '../lib/supabase.js'
     import { routes } from '../lib/routes.js'
 
@@ -306,6 +327,55 @@
       } finally {
         btn.disabled = false
         btn.textContent = 'Guardar domicilio'
+      }
+    }
+
+    window.guardarDatosPerfil = async function() {
+      clearAlert()
+      const camioneroId = sessionStorage.getItem('camionero_id')
+      if (!camioneroId) {
+        window.location.href = routes.login
+        return
+      }
+
+      const nombreEl = document.getElementById('edit-nombre')
+      const apellidoEl = document.getElementById('edit-apellido')
+      const celEl = document.getElementById('edit-cel')
+
+      const payload = {}
+      if (!nombreEl.disabled) payload.nombre = String(nombreEl.value || '').trim()
+      if (!apellidoEl.disabled) payload.apellido = String(apellidoEl.value || '').trim()
+      if (!celEl.disabled) payload.celular = String(celEl.value || '').trim()
+
+      if (!Object.keys(payload).length) {
+        showSuccess('No hay datos vacíos para completar.')
+        return
+      }
+
+      if (payload.nombre != null && !payload.nombre) return showError('Ingresá tu nombre.')
+      if (payload.apellido != null && !payload.apellido) return showError('Ingresá tu apellido.')
+      if (payload.celular != null && !payload.celular) return showError('Ingresá tu celular.')
+
+      const btn = document.getElementById('btn-guardar-datos')
+      btn.disabled = true
+      btn.innerHTML = '<span class="spinner"></span>Guardando...'
+      try {
+        await actualizarDatosCamionero(camioneroId, payload)
+        if (payload.nombre != null) document.getElementById('p-nombre').textContent = payload.nombre || '—'
+        if (payload.apellido != null) document.getElementById('p-apellido').textContent = payload.apellido || '—'
+        if (payload.celular != null) document.getElementById('p-cel').textContent = payload.celular || '—'
+
+        // Bloqueamos para no re-editar accidentalmente.
+        if (payload.nombre != null) nombreEl.disabled = true
+        if (payload.apellido != null) apellidoEl.disabled = true
+        if (payload.celular != null) celEl.disabled = true
+        showSuccess('Guardado exitosamente.')
+      } catch (e) {
+        console.error(e)
+        showError(e?.message || 'No se pudo guardar. Intentá de nuevo.')
+      } finally {
+        btn.disabled = false
+        btn.textContent = 'Guardar datos'
       }
     }
 
@@ -446,6 +516,21 @@
         const domTxt = String(c.domicilio || '').trim()
         document.getElementById('p-domicilio').textContent = domTxt || '—'
         document.getElementById('domicilio-perfil').value = domTxt
+
+        const en = document.getElementById('edit-nombre')
+        const ea = document.getElementById('edit-apellido')
+        const ec = document.getElementById('edit-cel')
+        const n = String(c.nombre || '').trim()
+        const a = String(c.apellido || '').trim()
+        const cel = String(c.celular || '').trim()
+
+        en.value = n
+        ea.value = a
+        ec.value = cel
+
+        en.disabled = !!n
+        ea.disabled = !!a
+        ec.disabled = !!cel
 
         document.getElementById('cbu-perfil').value = String(c.cbu_cvu || '').replace(/\D/g, '').slice(0, 22)
 
