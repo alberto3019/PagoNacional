@@ -274,6 +274,7 @@
   const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL
 
   const formEl = document.getElementById('form-solicitud')
+  const btnEnviar = document.getElementById('btn-enviar')
   let defaultDniFrenteUrl = ''
   let defaultDniDorsoUrl = ''
 
@@ -327,6 +328,24 @@
     preview.style.display = 'block'
   }
 
+  function hasDniSide(lado) {
+    const file = document.getElementById(`file-${lado}`)?.files?.[0]
+    if (file) return true
+    const prev = String(document.getElementById(`preview-${lado}`)?.getAttribute('src') || '').trim()
+    if (prev) return true
+    const def = lado === 'frente' ? defaultDniFrenteUrl : defaultDniDorsoUrl
+    return !!String(def || '').trim()
+  }
+
+  function updateCanSubmit() {
+    if (!btnEnviar) return
+    const tcOk = !!document.getElementById('tc')?.checked
+    const firmaOk = !isFirmaCanvasBlank()
+    const dniOk = hasDniSide('frente') && hasDniSide('dorso')
+    const formOk = !!formEl?.checkValidity?.() && tcOk
+    btnEnviar.disabled = !(formOk && firmaOk && dniOk)
+  }
+
   async function initSolicitud() {
     const camionero_id = sessionStorage.getItem('camionero_id')
     const email = sessionStorage.getItem('camionero_email')
@@ -360,6 +379,8 @@
       }
     } catch (e) {
       console.warn(e)
+    } finally {
+      updateCanSubmit()
     }
   }
   initSolicitud()
@@ -378,6 +399,7 @@
           /* noop */
         }
       }
+      updateCanSubmit()
     })
   }
 
@@ -386,6 +408,7 @@
     libradorEl.addEventListener('input', () => {
       const d = soloDigitosCuit(libradorEl.value)
       libradorEl.value = formatCuitVisual(d)
+      updateCanSubmit()
     })
   }
 
@@ -393,8 +416,25 @@
   if (domicilioEl) {
     domicilioEl.addEventListener('input', () => {
       domicilioEl.required = !String(domicilioEl.value || '').trim()
+      updateCanSubmit()
     })
   }
+
+  const cbuEl = document.getElementById('cbu')
+  const echeqEl = document.getElementById('numero_echeq')
+  const vtoEl = document.getElementById('vencimiento')
+  const bancoEl = document.getElementById('banco')
+  ;[cbuEl, echeqEl, vtoEl, bancoEl].forEach(el => {
+    if (!el) return
+    el.addEventListener('input', updateCanSubmit)
+    el.addEventListener('change', updateCanSubmit)
+  })
+
+  const tcEl = document.getElementById('tc')
+  tcEl?.addEventListener('change', updateCanSubmit)
+
+  document.getElementById('file-frente')?.addEventListener('change', updateCanSubmit)
+  document.getElementById('file-dorso')?.addEventListener('change', updateCanSubmit)
 
   const firmaCanvas = document.getElementById('firma-canvas')
   const firmaCtx = firmaCanvas ? firmaCanvas.getContext('2d') : null
@@ -407,6 +447,7 @@
     firmaCtx.lineWidth = 2.5
     firmaCtx.lineCap = 'round'
     firmaCtx.lineJoin = 'round'
+    updateCanSubmit()
   }
 
   function firmaCanvasPoint(evt) {
@@ -453,6 +494,7 @@
     })
     const endStroke = () => {
       drawing = false
+      updateCanSubmit()
     }
     firmaCanvas.addEventListener('pointerup', endStroke)
     firmaCanvas.addEventListener('pointercancel', endStroke)
@@ -467,6 +509,15 @@
       sessionStorage.setItem('ultimo_monto_solicitud', String(montoNum))
     }
     const dom = String(document.getElementById('domicilio')?.value || '').trim()
+    try {
+      if (firmaCanvas && !isFirmaCanvasBlank()) {
+        sessionStorage.setItem('ultima_firma_solicitud', firmaCanvas.toDataURL('image/png'))
+      } else {
+        sessionStorage.removeItem('ultima_firma_solicitud')
+      }
+    } catch {
+      sessionStorage.removeItem('ultima_firma_solicitud')
+    }
     const q = {
       monto: Number.isFinite(montoNum) && montoNum > 0 ? String(montoNum) : sessionStorage.getItem('ultimo_monto_solicitud') || '',
       domicilio: dom,

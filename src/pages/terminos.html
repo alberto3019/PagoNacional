@@ -20,6 +20,11 @@
     .muted { color: #6b7280; margin-bottom: 18px; }
     p { line-height: 1.72; margin: 0 0 14px; text-align: justify; }
     .fill { background: #eef2ff; color: #312e81; padding: 1px 6px; border-radius: 6px; font-weight: 600; }
+    .sig-wrap { margin-top: 18px; padding-top: 14px; border-top: 1px solid #e5e7eb; }
+    .sig-title { font-size: 12px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; color: #6b7280; margin: 0 0 10px; }
+    .sig-box { border: 1px solid #e5e7eb; border-radius: 12px; background: #fff; overflow: hidden; }
+    .sig-box img { display: block; width: 100%; height: auto; max-height: 220px; object-fit: contain; background: #fff; }
+    .sig-empty { padding: 14px; color: #6b7280; font-size: 13px; text-align: left; }
   </style>
 </head>
 <body>
@@ -87,6 +92,14 @@
       <p>A todos los efectos legales derivados del presente contrato, su interpretación, cumplimiento y ejecución, las partes acuerdan someterse de manera expresa, exclusiva y excluyente a la jurisdicción de los tribunales ordinarios de la Ciudad Autónoma de Buenos Aires, renunciando a cualquier otro fuero o jurisdicción que pudiera corresponder, incluso el del domicilio presente o futuro del DEUDOR, aceptando que toda acción judicial deberá iniciarse y tramitarse exclusivamente en dicha jurisdicción.</p>
 
       <p>En prueba de conformidad, se firman dos ejemplares de un mismo tenor y a un solo efecto, en el lugar y fecha indicados al inicio.</p>
+
+      <div class="sig-wrap">
+        <div class="sig-title">Firma del deudor</div>
+        <div class="sig-box">
+          <img id="f-firma-img" alt="Firma digital" style="display:none;" />
+          <div class="sig-empty" id="f-firma-empty">La firma se completa automáticamente desde la solicitud.</div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -159,6 +172,19 @@
         const montoFmt = montoNum.toLocaleString('es-AR', { maximumFractionDigits: 2 })
         setText('f-monto-num', montoFmt)
         setText('f-monto-tx', montoFmt)
+      }
+
+      const sigImg = document.getElementById('f-firma-img')
+      const sigEmpty = document.getElementById('f-firma-empty')
+      const sig = String(sessionStorage.getItem('ultima_firma_solicitud') || '').trim()
+      if (sig && sigImg && sigEmpty) {
+        sigImg.src = sig
+        sigImg.style.display = 'block'
+        sigEmpty.style.display = 'none'
+      } else if (sigImg && sigEmpty) {
+        sigImg.removeAttribute('src')
+        sigImg.style.display = 'none'
+        sigEmpty.style.display = 'block'
       }
     }
 
