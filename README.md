@@ -139,6 +139,23 @@ Funcionalidades:
 4. Configurar CORS en Supabase para solo permitir el dominio de produccion
 5. Usar tokens firmados para los links de verificacion de email
 
+---
+
+## Vercel: commits bloqueados por "Commit Author"
+
+Si Vercel muestra **Deployment Blocked** por "commit author does not have contributing access", la forma más estable es hacer los commits con el **noreply** de GitHub (como en los commits históricos del proyecto).
+
+Podés usar este script incluido en el repo:
+
+```bash
+chmod +x ./scripts/vercel-safe-commit.sh
+git add -A
+./scripts/vercel-safe-commit.sh "tu mensaje de commit"
+git push origin main
+```
+
+El script fija el author/committer a `alberto3019@users.noreply.github.com` solo para ese commit (no cambia tu configuración global de Git).
+
 
 cuentas
 Supabase: administracion@pagonacional.com - BuenosAires2026!
