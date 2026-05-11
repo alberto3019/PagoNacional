@@ -78,7 +78,23 @@
       font-size: 15px; font-family: 'DM Sans', sans-serif; color: var(--text);
       background: var(--white); transition: border-color 0.15s; -webkit-appearance: none;
     }
-    .field input:focus, .field select:focus { outline: none; border-color: var(--accent); }
+    .field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--accent); }
+    .field textarea {
+      width: 100%; min-height: 88px; padding: 11px 14px; border: 1px solid var(--border); border-radius: 8px;
+      font-size: 15px; font-family: 'DM Sans', sans-serif; color: var(--text); background: var(--white); resize: vertical;
+    }
+    .monto-hint { font-weight: 400; color: var(--text-muted); font-size: 12px; }
+    .sig-canvas-wrap {
+      border: 1.5px solid var(--border); border-radius: 8px; overflow: hidden;
+      background: #fff; touch-action: none; cursor: crosshair;
+    }
+    #firma-canvas { display: block; width: 100%; height: 168px; touch-action: none; }
+    .sig-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+    .sig-actions button {
+      padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border);
+      background: var(--white); font-size: 13px; font-family: inherit; cursor: pointer; color: var(--text);
+    }
+    .sig-actions button:active { opacity: 0.85; }
     .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     .upload-zone {
       border: 1.5px dashed var(--border); border-radius: 8px; padding: 20px;
@@ -143,8 +159,8 @@
     </div>
     <div class="field-row">
       <div class="field">
-        <label>Monto<span class="req" aria-hidden="true">*</span></label>
-        <input type="number" id="monto" name="monto" placeholder="250000" inputmode="decimal" min="0.01" step="any" required />
+        <label>Monto (ARS)<span class="req" aria-hidden="true">*</span> <span class="monto-hint">separador de miles automático</span></label>
+        <input type="text" id="monto" name="monto" placeholder="1.250.000" inputmode="decimal" autocomplete="off" required />
       </div>
       <div class="field">
         <label>Fecha de vencimiento<span class="req" aria-hidden="true">*</span></label>
@@ -171,8 +187,19 @@
       </select>
     </div>
     <div class="field">
-      <label>Librador<span class="req" aria-hidden="true">*</span></label>
-      <input type="text" id="librador" name="librador" placeholder="Razón social o banco librador del echeq" required autocomplete="organization" />
+      <label>CUIT de Librador<span class="req" aria-hidden="true">*</span> <span class="monto-hint">11 dígitos</span></label>
+      <input type="text" id="librador" name="librador" placeholder="20-12345678-9" inputmode="numeric" maxlength="13" required autocomplete="off" />
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-label">Domicilio</div>
+    <p class="page-sub" style="margin-top:-8px;margin-bottom:14px;font-size:13px;">
+      Si ya cargaste tu domicilio en <strong>Mi perfil</strong>, se completa solo. Si no, ingresalo acá (es obligatorio para enviar la solicitud).
+    </p>
+    <div class="field" style="margin-bottom:0">
+      <label for="domicilio">Domicilio real<span class="req" aria-hidden="true">*</span></label>
+      <textarea id="domicilio" name="domicilio" rows="3" maxlength="500" placeholder="Calle, número, piso, localidad, provincia…" autocomplete="street-address"></textarea>
     </div>
   </div>
 
@@ -210,6 +237,19 @@
     </div>
   </div>
 
+  <div class="card">
+    <div class="section-label">Firma digital</div>
+    <p class="page-sub" style="margin-top:-8px;margin-bottom:12px;font-size:13px;">
+      Firmá con el dedo o el mouse en el recuadro. La firma queda asociada a esta solicitud.
+    </p>
+    <div class="sig-canvas-wrap">
+      <canvas id="firma-canvas" width="700" height="220" aria-label="Área de firma"></canvas>
+    </div>
+    <div class="sig-actions">
+      <button type="button" id="btn-limpiar-firma">Borrar firma</button>
+    </div>
+  </div>
+
   <button class="btn-primary" type="submit" id="btn-enviar">
     Enviar solicitud
   </button>
@@ -218,7 +258,14 @@
 </div>
 
 <script type="module">
-  import { crearSolicitud, subirImagenCloudinary, obtenerCamioneroPorEmail, actualizarDniFotosCamionero, obtenerFinanzasConfig } from '../lib/supabase.js'
+  import {
+    crearSolicitud,
+    subirImagenCloudinary,
+    obtenerCamioneroPorEmail,
+    actualizarDniFotosCamionero,
+    actualizarDomicilioCamionero,
+    obtenerFinanzasConfig,
+  } from '../lib/supabase.js'
   import { enviarConfirmacionSolicitud, enviarNotificacionAdmin } from '../lib/emails.js'
   import { armarLiquidacionParaEmail } from '../lib/liquidacion.js'
   import { datosPrestamistaParaTerminos, ensurePrestamistaLoaded } from '../lib/terminosEmpresa.js'
@@ -229,6 +276,45 @@
   const formEl = document.getElementById('form-solicitud')
   let defaultDniFrenteUrl = ''
   let defaultDniDorsoUrl = ''
+
+  function parseMontoArs(str) {
+    const t = String(str || '').trim()
+    if (!t) return NaN
+    const lastComma = t.lastIndexOf(',')
+    if (lastComma === -1) {
+      const n = parseFloat(t.replace(/\./g, ''))
+      return Number.isFinite(n) ? n : NaN
+    }
+    const intRaw = t.slice(0, lastComma).replace(/\./g, '').replace(/\D/g, '')
+    const decRaw = t.slice(lastComma + 1).replace(/\D/g, '')
+    const n = parseFloat(`${intRaw}.${decRaw}`)
+    return Number.isFinite(n) ? n : NaN
+  }
+
+  function formatMontoArsInput(raw) {
+    const s = String(raw ?? '').replace(/[^\d.,]/g, '')
+    const parts = s.split(',')
+    let intPart = (parts[0] || '').replace(/\D/g, '').slice(0, 12)
+    const decPart = parts.length > 1 ? parts.slice(1).join('').replace(/\D/g, '').slice(0, 2) : ''
+    if (intPart.length > 1) intPart = intPart.replace(/^0+(?=\d)/, '')
+    if (!intPart && !decPart) return ''
+    const intFmt = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+    if (parts.length > 1) return decPart.length ? `${intFmt},${decPart}` : `${intFmt},`
+    return intFmt
+  }
+
+  function soloDigitosCuit(s) {
+    return String(s || '')
+      .replace(/\D/g, '')
+      .slice(0, 11)
+  }
+
+  function formatCuitVisual(digits) {
+    const d = soloDigitosCuit(digits)
+    if (d.length <= 2) return d
+    if (d.length <= 10) return `${d.slice(0, 2)}-${d.slice(2)}`
+    return `${d.slice(0, 2)}-${d.slice(2, 10)}-${d.slice(10)}`
+  }
 
   function setDniZoneFromUrl(lado, url, labelText) {
     if (!url) return
@@ -265,18 +351,127 @@
       const hint = 'Foto de tu cuenta — tocá para cambiarla'
       setDniZoneFromUrl('frente', defaultDniFrenteUrl, hint)
       setDniZoneFromUrl('dorso', defaultDniDorsoUrl, hint)
+
+      const domEl = document.getElementById('domicilio')
+      const domSaved = String(c.domicilio || '').trim()
+      if (domEl) {
+        if (domSaved && !String(domEl.value || '').trim()) domEl.value = domSaved
+        domEl.required = !String(domEl.value || '').trim()
+      }
     } catch (e) {
       console.warn(e)
     }
   }
   initSolicitud()
 
+  const montoEl = document.getElementById('monto')
+  if (montoEl) {
+    montoEl.addEventListener('input', () => {
+      const cur = montoEl.value
+      const sel = montoEl.selectionStart
+      const next = formatMontoArsInput(cur)
+      if (next !== cur) {
+        montoEl.value = next
+        try {
+          montoEl.setSelectionRange(sel, sel)
+        } catch {
+          /* noop */
+        }
+      }
+    })
+  }
+
+  const libradorEl = document.getElementById('librador')
+  if (libradorEl) {
+    libradorEl.addEventListener('input', () => {
+      const d = soloDigitosCuit(libradorEl.value)
+      libradorEl.value = formatCuitVisual(d)
+    })
+  }
+
+  const domicilioEl = document.getElementById('domicilio')
+  if (domicilioEl) {
+    domicilioEl.addEventListener('input', () => {
+      domicilioEl.required = !String(domicilioEl.value || '').trim()
+    })
+  }
+
+  const firmaCanvas = document.getElementById('firma-canvas')
+  const firmaCtx = firmaCanvas ? firmaCanvas.getContext('2d') : null
+
+  function clearFirmaCanvas() {
+    if (!firmaCanvas || !firmaCtx) return
+    firmaCtx.fillStyle = '#ffffff'
+    firmaCtx.fillRect(0, 0, firmaCanvas.width, firmaCanvas.height)
+    firmaCtx.strokeStyle = '#111827'
+    firmaCtx.lineWidth = 2.5
+    firmaCtx.lineCap = 'round'
+    firmaCtx.lineJoin = 'round'
+  }
+
+  function firmaCanvasPoint(evt) {
+    const r = firmaCanvas.getBoundingClientRect()
+    const clientX = evt.clientX ?? evt.touches?.[0]?.clientX
+    const clientY = evt.clientY ?? evt.touches?.[0]?.clientY
+    const x = ((clientX - r.left) / r.width) * firmaCanvas.width
+    const y = ((clientY - r.top) / r.height) * firmaCanvas.height
+    return { x, y }
+  }
+
+  function isFirmaCanvasBlank() {
+    if (!firmaCanvas || !firmaCtx) return true
+    const { data } = firmaCtx.getImageData(0, 0, firmaCanvas.width, firmaCanvas.height)
+    for (let i = 0; i < data.length; i += 4) {
+      const r = data[i]
+      const g = data[i + 1]
+      const b = data[i + 2]
+      if (r < 248 || g < 248 || b < 248) return false
+    }
+    return true
+  }
+
+  if (firmaCanvas && firmaCtx) {
+    clearFirmaCanvas()
+    let drawing = false
+    firmaCanvas.addEventListener('pointerdown', e => {
+      if (e.button != null && e.button !== 0) return
+      drawing = true
+      firmaCtx.beginPath()
+      const p = firmaCanvasPoint(e)
+      firmaCtx.moveTo(p.x, p.y)
+      try {
+        firmaCanvas.setPointerCapture(e.pointerId)
+      } catch {
+        /* noop */
+      }
+    })
+    firmaCanvas.addEventListener('pointermove', e => {
+      if (!drawing) return
+      const p = firmaCanvasPoint(e)
+      firmaCtx.lineTo(p.x, p.y)
+      firmaCtx.stroke()
+    })
+    const endStroke = () => {
+      drawing = false
+    }
+    firmaCanvas.addEventListener('pointerup', endStroke)
+    firmaCanvas.addEventListener('pointercancel', endStroke)
+    document.getElementById('btn-limpiar-firma')?.addEventListener('click', () => clearFirmaCanvas())
+  }
+
   window.abrirTerminos = function(event) {
     event.preventDefault()
-    const monto = document.getElementById('monto').value.trim()
-    if (monto) sessionStorage.setItem('ultimo_monto_solicitud', monto)
-    const query = new URLSearchParams({ monto: monto || sessionStorage.getItem('ultimo_monto_solicitud') || '' })
-    window.open(`${routes.terminos}?${query.toString()}`, '_blank')
+    const montoRaw = document.getElementById('monto').value.trim()
+    const montoNum = parseMontoArs(montoRaw)
+    if (Number.isFinite(montoNum) && montoNum > 0) {
+      sessionStorage.setItem('ultimo_monto_solicitud', String(montoNum))
+    }
+    const dom = String(document.getElementById('domicilio')?.value || '').trim()
+    const q = {
+      monto: Number.isFinite(montoNum) && montoNum > 0 ? String(montoNum) : sessionStorage.getItem('ultimo_monto_solicitud') || '',
+      domicilio: dom,
+    }
+    window.open(`${routes.terminos}?${new URLSearchParams(q).toString()}`, '_blank')
   }
 
   window.goHome = () => { window.location.href = routes.home }
@@ -310,13 +505,20 @@
       return
     }
 
+    if (isFirmaCanvasBlank()) {
+      alertEl.className = 'alert error'
+      alertEl.textContent = 'Tenés que firmar con el dedo o el mouse en el recuadro de firma digital.'
+      return
+    }
+
     const cbuRaw       = document.getElementById('cbu').value.trim()
     const cbu          = cbuRaw.replace(/\D/g, '')
     const numero_echeq = document.getElementById('numero_echeq').value.trim()
     const monto        = document.getElementById('monto').value.trim()
     const vencimiento  = document.getElementById('vencimiento').value
     const banco        = document.getElementById('banco').value
-    const librador     = document.getElementById('librador').value.trim()
+    const cuitLibrador = soloDigitosCuit(document.getElementById('librador').value)
+    const domicilio    = String(document.getElementById('domicilio').value || '').trim()
     const fileFrente   = document.getElementById('file-frente').files[0]
     const fileDorso    = document.getElementById('file-dorso').files[0]
 
@@ -339,7 +541,7 @@
       alertEl.textContent = 'El CBU / CVU debe tener exactamente 22 dígitos.'
       return
     }
-    const montoNum = parseFloat(monto.replace(',', '.'))
+    const montoNum = parseMontoArs(monto)
     if (!Number.isFinite(montoNum) || montoNum <= 0) {
       alertEl.className = 'alert error'
       alertEl.textContent = 'Ingresá un monto válido mayor a cero.'
@@ -350,9 +552,14 @@
       alertEl.textContent = 'Tenés que ingresar el número de echeq.'
       return
     }
-    if (!librador) {
+    if (cuitLibrador.length !== 11) {
       alertEl.className = 'alert error'
-      alertEl.textContent = 'Tenés que ingresar el librador del echeq.'
+      alertEl.textContent = 'El CUIT del librador debe tener 11 dígitos.'
+      return
+    }
+    if (!domicilio) {
+      alertEl.className = 'alert error'
+      alertEl.textContent = 'Ingresá tu domicilio real (si no lo tenés en tu perfil, es obligatorio en esta solicitud).'
       return
     }
 
@@ -405,11 +612,11 @@
           step += 1
           if (isCloudinaryConfigured) {
             btn.innerHTML = `<span class="spinner"></span>Subiendo ${lado} del DNI...`
-            progressEl.textContent = uploadSteps ? `${step} de ${uploadSteps + 1} — Subiendo imagen...` : 'Subiendo imagen...'
+            progressEl.textContent = uploadSteps ? `${step} de ${uploadSteps + 2} — Subiendo imagen...` : 'Subiendo imagen...'
             return await subirImagenCloudinary(file, 'dni')
           }
           btn.innerHTML = `<span class="spinner"></span>Guardando ${lado}...`
-          progressEl.textContent = uploadSteps ? `${step} de ${uploadSteps + 1} — Guardando imagen...` : 'Guardando imagen...'
+          progressEl.textContent = uploadSteps ? `${step} de ${uploadSteps + 2} — Guardando imagen...` : 'Guardando imagen...'
           return await toDataUrl(file)
         }
         return defaultUrl
@@ -418,9 +625,33 @@
       dniFrente = await resolveDniSide(fileFrente, defaultDniFrenteUrl, 'frente')
       dniDorso = await resolveDniSide(fileDorso, defaultDniDorsoUrl, 'dorso')
 
+      async function canvasToPngBlob(canvas) {
+        return await new Promise((resolve, reject) => {
+          canvas.toBlob(b => (b ? resolve(b) : reject(new Error('No se pudo generar la firma.'))), 'image/png', 0.92)
+        })
+      }
+
+      let firmaUrl = ''
+      if (firmaCanvas) {
+        step += 1
+        const sigBlob = await canvasToPngBlob(firmaCanvas)
+        const sigFile = new File([sigBlob], 'firma.png', { type: 'image/png' })
+        if (isCloudinaryConfigured) {
+          btn.innerHTML = '<span class="spinner"></span>Subiendo firma...'
+          progressEl.textContent =
+            uploadSteps > 0 ? `${step} de ${uploadSteps + 2} — Subiendo firma...` : 'Subiendo firma...'
+          firmaUrl = await subirImagenCloudinary(sigFile, 'firmas')
+        } else {
+          btn.innerHTML = '<span class="spinner"></span>Guardando firma...'
+          progressEl.textContent =
+            uploadSteps > 0 ? `${step} de ${uploadSteps + 2} — Guardando firma...` : 'Guardando firma...'
+          firmaUrl = await toDataUrl(sigFile)
+        }
+      }
+
       btn.innerHTML = '<span class="spinner"></span>Guardando solicitud...'
       progressEl.textContent =
-        uploadSteps > 0 ? `${uploadSteps + 1} de ${uploadSteps + 1} — Guardando solicitud...` : 'Guardando solicitud...'
+        uploadSteps > 0 ? `${uploadSteps + 2} de ${uploadSteps + 2} — Guardando solicitud...` : 'Guardando solicitud...'
 
       // Snapshot de T&C por solicitud (persistido en Supabase).
       const nowIso = new Date().toISOString()
@@ -437,7 +668,7 @@
 
       const deudorNombre = (`${camionero?.nombre || ''} ${camionero?.apellido || ''}`.trim()) || nombre
       const deudorDni = camionero?.dni || ''
-      const deudorDom = camionero?.domicilio || 'NO INFORMADO'
+      const deudorDom = domicilio || 'NO INFORMADO'
       const montoFmt = montoNum.toLocaleString('es-AR', { maximumFractionDigits: 2 })
 
       const terminosHtml = `<!doctype html><html lang="es"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Términos y Condiciones — ${prestamistaNombre}</title><style>body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;padding:24px;line-height:1.72;max-width:980px;margin:0 auto;color:#111827}p{margin:0 0 14px;text-align:justify}.muted{color:#6b7280;margin:0 0 16px}</style></head><body><h2>Contrato de mutuo dinerario con reconocimiento de deuda</h2><div class="muted">Aceptado digitalmente el ${new Date(nowIso).toLocaleString('es-AR')}.</div><p>En la Ciudad Autónoma de Buenos Aires, a los ${new Date(nowIso).getDate()} días del mes de ${new Date(nowIso).toLocaleString('es-AR', { month: 'long' })} de ${new Date(nowIso).getFullYear()}, entre ${prestamistaNombre}, CUIT Nº ${prestamistaCuit}, con domicilio en ${prestamistaDom}, en adelante denominado indistintamente “EL PRESTAMISTA” o “EL ACREEDOR”, por una parte, y por la otra el/la Sr./Sra. ${deudorNombre || '[NOMBRE COMPLETO DEL DEUDOR]'}, DNI Nº ${deudorDni || '__________'}, con domicilio real en ${deudorDom}, en adelante denominado “EL DEUDOR”, se celebra el presente contrato de mutuo dinerario con reconocimiento expreso de deuda, carácter ejecutivo, suscripción de pagaré y cláusulas de ejecución, sujeto a las siguientes condiciones:</p><p>EL PRESTAMISTA otorga en carácter de mutuo dinerario a favor de EL DEUDOR una suma de dinero en pesos argentinos, cuyo monto será el que el DEUDOR hubiera solicitado, declarado y confirmado mediante el formulario digital dispuesto por EL PRESTAMISTA, el cual el DEUDOR manifiesta haber completado en forma libre, voluntaria, consciente e informada, reconociendo que dicha solicitud constituye oferta válida, vinculante e irrevocable.</p><p>El contrato se considerará perfeccionado en el momento en que EL PRESTAMISTA efectúe la transferencia del monto solicitado a la cuenta bancaria o virtual (CBU/CVU) denunciada por EL DEUDOR en el formulario digital, constituyendo dicha transferencia prueba plena, suficiente e irrefutable de la entrega del capital, sirviendo el comprobante electrónico como recibo válido, renunciando EL DEUDOR a cualquier impugnación posterior relativa a la efectiva percepción de los fondos.</p><p>EL DEUDOR reconoce en forma expresa, irrevocable, incondicional y sin reservas adeudar a EL PRESTAMISTA la suma de pesos ${montoFmt} ($${montoFmt}), obligándose a su restitución conforme los términos, plazos, modalidades y condiciones establecidos en la confirmación digital del préstamo, la cual integra el presente contrato a todos sus efectos legales.</p><p>El presente instrumento reviste el carácter de reconocimiento de deuda líquida, exigible y ejecutable, otorgando a EL PRESTAMISTA acción ejecutiva directa para su cobro, bastando su sola presentación para la promoción de la correspondiente demanda judicial.</p><p>En este acto, y como garantía adicional e independiente, EL DEUDOR suscribe un PAGARÉ SIN PROTESTO a favor de EL PRESTAMISTA por el monto total adeudado, autorizando expresamente a EL PRESTAMISTA a completar los datos faltantes conforme a las condiciones pactadas, reconociendo la plena validez, exigibilidad y ejecutividad del mismo, aun cuando el mismo haya sido suscripto mediante mecanismos electrónicos.</p><p>EL DEUDOR se obliga a cumplir estrictamente con los vencimientos pactados, estableciéndose que la mora se producirá en forma automática y de pleno derecho por el solo vencimiento de cualquier obligación, sin necesidad de interpelación judicial o extrajudicial.</p><p>En caso de mora, EL DEUDOR deberá abonar un interés punitorio equivalente al UNO POR CIENTO (1%) diario sobre el saldo total adeudado, el cual se devengará automáticamente y podrá capitalizarse hasta la efectiva cancelación de la deuda, sin perjuicio de otros intereses, gastos y accesorios que pudieran corresponder.</p><p>El incumplimiento de cualquiera de las obligaciones asumidas producirá la caducidad automática de todos los plazos, tornándose inmediatamente exigible la totalidad del capital adeudado con más sus intereses y accesorios.</p><p>EL DEUDOR autoriza en forma expresa, irrevocable e ilimitada a EL PRESTAMISTA a consultar, verificar, almacenar y compartir su información crediticia en bases de datos públicas y privadas, así como a informar su incumplimiento a centrales de riesgo, entidades financieras, comerciales y/o terceros, y a realizar gestiones de cobro por sí o por terceros, mediante cualquier medio, incluyendo contacto telefónico, digital o presencial.</p><p>Todo pago efectuado será imputado en primer término a gastos, luego a intereses y finalmente a capital, aun en contra de la voluntad del DEUDOR.</p><p>Todos los gastos, costos, comisiones, honorarios profesionales, tasas judiciales y extrajudiciales y cualquier otro concepto derivado de la gestión de cobro serán íntegramente a cargo del DEUDOR.</p><p>El DEUDOR renuncia expresamente a oponer excepciones dilatorias, defensas improcedentes, beneficios procesales, así como a invocar teorías tales como imprevisión, lesión o abuso del derecho, en la medida permitida por la legislación vigente.</p><p>El DEUDOR reconoce y acepta que la aceptación del presente contrato mediante medios electrónicos tendrá plena validez jurídica, obligatoria y ejecutable, equiparable a la firma manuscrita, en los términos de la legislación vigente en la República Argentina, incluyendo pero no limitado a la Ley de Firma Digital N° 25.506 y normativa complementaria.</p><p>A tal efecto, se considerará firma electrónica válida la aceptación mediante el sitio web de EL PRESTAMISTA, incluyendo la carga de datos personales, confirmación del préstamo, validación mediante código SMS, correo electrónico, dirección IP, geolocalización, dispositivo utilizado y cualquier otro mecanismo tecnológico que permita identificar inequívocamente al DEUDOR, quien reconoce expresamente que dichos elementos constituyen prueba suficiente de su consentimiento, autoría y voluntad de obligarse en los términos del presente.</p><p>En caso de incumplimiento total o parcial de las obligaciones asumidas, EL PRESTAMISTA quedará facultado, a su exclusivo criterio y sin necesidad de notificación previa, para proceder a la ejecución inmediata del pagaré suscripto, por la totalidad de la suma adeudada, incluyendo capital, intereses, gastos y accesorios, pudiendo iniciar las acciones judiciales ejecutivas correspondientes y solicitar todas las medidas cautelares que resulten procedentes, incluyendo embargos preventivos y/o ejecutivos sobre cuentas bancarias, billeteras virtuales, ingresos, bienes muebles, inmuebles y cualquier otro activo del DEUDOR, así como la inhibición general de bienes y la eventual subasta judicial de los mismos hasta lograr el recupero total del crédito.</p><p>El DEUDOR acepta en forma expresa, irrevocable e incondicional que, ante cualquier incumplimiento, EL PRESTAMISTA podrá iniciar directamente juicio ejecutivo, reconociendo la plena legitimidad del título y del procedimiento, renunciando a cualquier oposición que tienda a dilatar el cobro.</p><p>A todos los efectos legales derivados del presente contrato, su interpretación, cumplimiento y ejecución, las partes acuerdan someterse de manera expresa, exclusiva y excluyente a la jurisdicción de los tribunales ordinarios de la Ciudad Autónoma de Buenos Aires, renunciando a cualquier otro fuero o jurisdicción que pudiera corresponder, incluso el del domicilio presente o futuro del DEUDOR, aceptando que toda acción judicial deberá iniciarse y tramitarse exclusivamente en dicha jurisdicción.</p><p>En prueba de conformidad, se firman dos ejemplares de un mismo tenor y a un solo efecto, en el lugar y fecha indicados al inicio.</p></body></html>`
@@ -457,10 +688,12 @@
         numero_echeq,
         monto: montoNum,
         banco_emisor: banco,
-        librador,
+        librador: cuitLibrador,
         fecha_vencimiento: vencimiento,
         dni_frente_url: dniFrente,
         dni_dorso_url: dniDorso,
+        firma_url: firmaUrl || null,
+        domicilio_declarado: domicilio,
         tc_aceptado: true,
         liq_comercial_nombre: liquidacion?.comercialNombre || null,
         liq_comision_pct: liquidacion?.porcentajeComision ?? null,
@@ -515,6 +748,12 @@
         defaultDniDorsoUrl = dniDorso
       } catch (e) {
         console.warn('No se pudo actualizar las fotos de DNI en el perfil:', e)
+      }
+
+      try {
+        await actualizarDomicilioCamionero(camionero_id, domicilio)
+      } catch (e) {
+        console.warn('No se pudo guardar el domicilio en tu perfil:', e)
       }
 
       window.location.href = `${routes.confirmacion}?num=${encodeURIComponent(solicitud.numero)}`

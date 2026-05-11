@@ -341,7 +341,7 @@
               <th>Titular</th>
               <th>Alias</th>
               <th>CUIT asign.</th>
-              <th>Librador echeq</th>
+              <th>CUIT librador</th>
               <th>Banco cuenta</th>
               <th>Banco echeq</th>
               <th>Estado</th>
@@ -368,12 +368,12 @@
         <button type="button" class="cuenta-modal-close" onclick="cerrarModalCuenta()" aria-label="Cerrar">×</button>
       </div>
       <div class="cuenta-modal-body">
-        <p class="sub" style="margin-bottom:16px;font-size:13px;">CUIT de asignación y datos del echeq (librador de tu solicitud).</p>
+        <p class="sub" style="margin-bottom:16px;font-size:13px;">CUIT de asignación y datos del echeq (CUIT del librador de tu solicitud).</p>
         <dl class="cuenta-dl">
           <div><dt>Titular</dt><dd id="cd-titular">—</dd></div>
           <div><dt>Alias</dt><dd id="cd-alias" class="mono">—</dd></div>
           <div><dt>CUIT</dt><dd id="cd-cuit" class="mono">—</dd></div>
-          <div><dt>Librador (echeq)</dt><dd id="cd-librador">—</dd></div>
+          <div><dt>CUIT de Librador (echeq)</dt><dd id="cd-librador">—</dd></div>
           <div id="cd-legacy-row" style="display:none"><dt>Ref. anterior</dt><dd id="cd-legacy" class="mono">—</dd></div>
           <div><dt>Banco</dt><dd id="cd-banco">—</dd></div>
         </dl>
@@ -413,6 +413,12 @@
       return v || '—'
     }
 
+    function fmtCuitLibrador(val) {
+      const d = String(val || '').replace(/\D/g, '')
+      if (d.length === 11) return `${d.slice(0, 2)}-${d.slice(2, 10)}-${d.slice(10)}`
+      return String(val || '').trim()
+    }
+
     window._homeSolicitudesCache = []
 
     window.verCuentaDestino = function(id) {
@@ -425,7 +431,7 @@
       document.getElementById('cd-titular').textContent = dash(titular)
       document.getElementById('cd-alias').textContent = dash(alias)
       document.getElementById('cd-cuit').textContent = dash(cuit)
-      document.getElementById('cd-librador').textContent = dash(librador)
+      document.getElementById('cd-librador').textContent = dash(fmtCuitLibrador(librador))
       const legRow = document.getElementById('cd-legacy-row')
       const legEl = document.getElementById('cd-legacy')
       const showLegacy = !!legacyCvu && !cuit
@@ -476,7 +482,7 @@
             <div class="sol-row"><dt>Titular</dt><dd>${dash(cd.titular)}</dd></div>
             <div class="sol-row"><dt>Alias</dt><dd class="mono">${dash(cd.alias)}</dd></div>
             <div class="sol-row"><dt>CUIT asign.</dt><dd class="mono">${dash(cd.cuit)}</dd></div>
-            <div class="sol-row"><dt>Librador echeq</dt><dd>${dash(cd.librador)}</dd></div>
+            <div class="sol-row"><dt>CUIT librador</dt><dd>${dash(fmtCuitLibrador(cd.librador))}</dd></div>
             <div class="sol-row"><dt>Banco cuenta</dt><dd>${dash(cd.bancoCta)}</dd></div>
             <div class="sol-row"><dt>Banco echeq</dt><dd>${s.banco_emisor}</dd></div>
             <div class="sol-row"><dt>Fecha</dt><dd>${fecha}</dd></div>
@@ -536,7 +542,7 @@
               <td>${dash(cd.titular)}</td>
               <td class="mono">${dash(cd.alias)}</td>
               <td class="mono">${dash(cd.cuit)}</td>
-              <td>${dash(cd.librador)}</td>
+              <td>${dash(fmtCuitLibrador(cd.librador))}</td>
               <td>${dash(cd.bancoCta)}</td>
               <td>${s.banco_emisor}</td>
               <td><span class="badge ${cls}">${s.estado}</span></td>

@@ -16,6 +16,7 @@ CREATE TABLE camioneros (
   dni_frente_url TEXT,
   dni_dorso_url TEXT,
   cbu_cvu TEXT,
+  domicilio TEXT,
   password TEXT,
   password_reset_token TEXT,
   password_reset_expires_at TIMESTAMPTZ,
@@ -29,6 +30,7 @@ CREATE TABLE camioneros (
 -- ALTER TABLE camioneros ADD COLUMN IF NOT EXISTS password_reset_token TEXT;
 -- ALTER TABLE camioneros ADD COLUMN IF NOT EXISTS password_reset_expires_at TIMESTAMPTZ;
 -- ALTER TABLE camioneros ADD COLUMN IF NOT EXISTS cbu_cvu TEXT;
+-- ALTER TABLE camioneros ADD COLUMN IF NOT EXISTS domicilio TEXT;
 
 -- Tabla de solicitudes de echeq
 CREATE TABLE solicitudes (
@@ -61,6 +63,8 @@ CREATE TABLE solicitudes (
   liq_neto_transferir NUMERIC(14, 2),
   terminos_html TEXT,
   terminos_aceptados_at TIMESTAMPTZ,
+  firma_url TEXT,
+  domicilio_declarado TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );

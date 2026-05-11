@@ -140,7 +140,21 @@
       setText('f-deudor-dni', dni || '__________')
       setText('f-deudor-dom', domicilio || 'NO INFORMADO')
 
-      const montoNum = Number(String(monto).replace(',', '.'))
+      function parseMontoFlexible(raw) {
+        const t = String(raw || '').trim()
+        if (!t) return NaN
+        const lastComma = t.lastIndexOf(',')
+        if (lastComma === -1) {
+          const n = parseFloat(t.replace(/\./g, ''))
+          return Number.isFinite(n) ? n : NaN
+        }
+        const intRaw = t.slice(0, lastComma).replace(/\./g, '').replace(/\D/g, '')
+        const decRaw = t.slice(lastComma + 1).replace(/\D/g, '')
+        const n = parseFloat(`${intRaw}.${decRaw}`)
+        return Number.isFinite(n) ? n : NaN
+      }
+
+      const montoNum = parseMontoFlexible(monto)
       if (!Number.isNaN(montoNum) && montoNum > 0) {
         const montoFmt = montoNum.toLocaleString('es-AR', { maximumFractionDigits: 2 })
         setText('f-monto-num', montoFmt)

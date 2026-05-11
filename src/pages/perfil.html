@@ -99,6 +99,11 @@
       font-size: 15px; font-family: 'DM Sans', sans-serif; color: var(--text); background: var(--white);
     }
     .field input[type=text]:focus { outline: none; border-color: var(--accent); }
+    .field textarea {
+      width: 100%; min-height: 88px; padding: 11px 14px; border: 1px solid var(--border); border-radius: 8px;
+      font-size: 15px; font-family: 'DM Sans', sans-serif; color: var(--text); background: var(--white); resize: vertical;
+    }
+    .field textarea:focus { outline: none; border-color: var(--accent); }
     .upload-zone {
       border: 1.5px dashed var(--border); border-radius: 8px; padding: 20px;
       text-align: center; cursor: pointer; transition: border-color 0.15s, background 0.15s;
@@ -165,6 +170,17 @@
       <div class="row"><span class="label">CUIT</span><span class="val mono" id="p-cuit">—</span></div>
       <div class="row"><span class="label">Email</span><span class="val" id="p-email">—</span></div>
       <div class="row"><span class="label">Celular</span><span class="val" id="p-cel">—</span></div>
+      <div class="row"><span class="label">Domicilio</span><span class="val" id="p-domicilio" style="text-align:right;max-width:62%">—</span></div>
+    </div>
+
+    <div class="card" style="margin-top:14px">
+      <div class="section">Domicilio</div>
+      <p class="dni-hint">Si lo guardás acá, se va a completar solo en nuevas solicitudes. Podés actualizarlo cuando quieras.</p>
+      <div class="field" style="margin-bottom:14px">
+        <label for="domicilio-perfil">Domicilio real</label>
+        <textarea id="domicilio-perfil" maxlength="500" rows="3" placeholder="Calle, número, localidad, provincia…" autocomplete="street-address"></textarea>
+      </div>
+      <button type="button" class="btn-primary" id="btn-guardar-dom" onclick="guardarDomicilioPerfil()">Guardar domicilio</button>
     </div>
 
     <div class="card" style="margin-top:14px">
@@ -212,7 +228,13 @@
   </div>
 
   <script type="module">
-    import { obtenerCamioneroPorEmail, subirImagenCloudinary, actualizarDniFotosCamionero, actualizarCbuCvuCamionero } from '../lib/supabase.js'
+    import {
+      obtenerCamioneroPorEmail,
+      subirImagenCloudinary,
+      actualizarDniFotosCamionero,
+      actualizarCbuCvuCamionero,
+      actualizarDomicilioCamionero,
+    } from '../lib/supabase.js'
     import { routes } from '../lib/routes.js'
 
     const alertEl = document.getElementById('alert')
@@ -261,6 +283,30 @@
       const reader = new FileReader()
       reader.onload = e => { preview.src = e.target.result; preview.style.display = 'block' }
       reader.readAsDataURL(file)
+    }
+
+    window.guardarDomicilioPerfil = async function() {
+      clearAlert()
+      const camioneroId = sessionStorage.getItem('camionero_id')
+      if (!camioneroId) {
+        window.location.href = routes.login
+        return
+      }
+      const dom = String(document.getElementById('domicilio-perfil').value || '').trim()
+      const btn = document.getElementById('btn-guardar-dom')
+      btn.disabled = true
+      btn.innerHTML = '<span class="spinner"></span>Guardando...'
+      try {
+        await actualizarDomicilioCamionero(camioneroId, dom)
+        document.getElementById('p-domicilio').textContent = dom || '—'
+        showSuccess('Guardado exitosamente.')
+      } catch (e) {
+        console.error(e)
+        showError(e?.message || 'No se pudo guardar. Intentá de nuevo.')
+      } finally {
+        btn.disabled = false
+        btn.textContent = 'Guardar domicilio'
+      }
     }
 
     window.guardarCbuPerfil = async function() {
@@ -397,6 +443,9 @@
         document.getElementById('p-cuit').textContent = c.cuit || '—'
         document.getElementById('p-email').textContent = c.email || '—'
         document.getElementById('p-cel').textContent = c.celular || '—'
+        const domTxt = String(c.domicilio || '').trim()
+        document.getElementById('p-domicilio').textContent = domTxt || '—'
+        document.getElementById('domicilio-perfil').value = domTxt
 
         document.getElementById('cbu-perfil').value = String(c.cbu_cvu || '').replace(/\D/g, '').slice(0, 22)
 

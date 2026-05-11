@@ -277,6 +277,13 @@ export async function actualizarCbuCvuCamionero(camioneroId, cbu_cvu) {
   if (error) throw error
 }
 
+export async function actualizarDomicilioCamionero(camioneroId, domicilio) {
+  requireSupabase()
+  const v = String(domicilio ?? '').trim() || null
+  const { error } = await supabase.from('camioneros').update({ domicilio: v }).eq('id', camioneroId)
+  if (error) throw error
+}
+
 export async function verificarEmail(camioneroId) {
   requireSupabase()
   const { error } = await supabase
