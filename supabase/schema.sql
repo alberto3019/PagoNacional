@@ -148,6 +148,8 @@ CREATE TABLE finanzas_config (
 INSERT INTO finanzas_config (id) VALUES (1) ON CONFLICT (id) DO NOTHING;
 
 ALTER TABLE camioneros ADD COLUMN IF NOT EXISTS comercial_id UUID REFERENCES comerciales(id) ON DELETE SET NULL;
+ALTER TABLE camioneros ADD COLUMN IF NOT EXISTS comision_pct NUMERIC(6, 2)
+  CHECK (comision_pct IS NULL OR (comision_pct >= 0 AND comision_pct <= 100));
 
 -- Row Level Security
 ALTER TABLE camioneros ENABLE ROW LEVEL SECURITY;

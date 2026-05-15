@@ -21,19 +21,33 @@ export function calcularLiquidacionGestion(montoBruto, porcentajeComision, gasto
  */
 export function resolverComisionYEtiqueta(camionero, finanzas) {
   const co = camionero?.comerciales
+  let etiqueta
+  let porcentajeBase
+  let esPagoNacional
+
   if (co && typeof co === 'object' && co.id) {
     const nombre = `${String(co.nombre || '').trim()} ${String(co.apellido || '').trim()}`.trim()
-    return {
-      etiqueta: nombre || 'Comercial',
-      porcentaje: Number(co.porcentaje_comision) || 0,
-      esPagoNacional: false,
-    }
+    etiqueta = nombre || 'Comercial'
+    porcentajeBase = Number(co.porcentaje_comision) || 0
+    esPagoNacional = false
+  } else {
+    const def = Number(finanzas?.comision_pagonacional_pct)
+    etiqueta = 'Pago Nacional'
+    porcentajeBase = Number.isFinite(def) ? def : 10
+    esPagoNacional = true
   }
-  const def = Number(finanzas?.comision_pagonacional_pct)
+
+  const override = camionero?.comision_pct
+  const tieneOverride =
+    override != null && override !== '' && Number.isFinite(Number(override))
+  const porcentaje = tieneOverride ? Number(override) : porcentajeBase
+
   return {
-    etiqueta: 'Pago Nacional',
-    porcentaje: Number.isFinite(def) ? def : 10,
-    esPagoNacional: true,
+    etiqueta,
+    porcentaje,
+    porcentajeBase,
+    esPagoNacional,
+    tieneOverridePersonalizado: tieneOverride,
   }
 }
 

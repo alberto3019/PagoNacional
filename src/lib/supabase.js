@@ -137,9 +137,22 @@ export async function eliminarComercial(comercialId) {
   if (error) throw error
 }
 
-export async function actualizarComercialCamionero(camioneroId, comercialId) {
+export async function actualizarComercialCamionero(camioneroId, comercialId, comisionPct = undefined) {
   requireSupabase()
-  const payload = { comercial_id: comercialId || null }
+  const payload = {}
+  if (comercialId !== undefined) payload.comercial_id = comercialId || null
+  if (comisionPct !== undefined) {
+    if (comisionPct === null || comisionPct === '') {
+      payload.comision_pct = null
+    } else {
+      const pct = Number(comisionPct)
+      if (!Number.isFinite(pct) || pct < 0 || pct > 100) {
+        throw new Error('El porcentaje debe estar entre 0 y 100.')
+      }
+      payload.comision_pct = pct
+    }
+  }
+  if (!Object.keys(payload).length) return
   const { error } = await supabase.from('camioneros').update(payload).eq('id', camioneroId)
   if (error) throw error
 }
@@ -347,7 +360,7 @@ export async function listarSolicitudes({ busqueda, estado, desde, hasta } = {})
     .select(`
       *,
       camioneros (
-        nombre, apellido, dni, cuit, celular, email, comercial_id,
+        nombre, apellido, dni, cuit, celular, email, comercial_id, comision_pct,
         comerciales ( id, nombre, apellido, porcentaje_comision )
       )
     `)

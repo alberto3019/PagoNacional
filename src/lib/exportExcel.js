@@ -17,7 +17,7 @@ export function exportarSolicitudes(solicitudes, nombreArchivo = 'pago-nacional-
       if (co?.nombre != null) return `${co.nombre || ''} ${co.apellido || ''}`.trim()
       return 'Pago Nacional (por defecto)'
     })(),
-    '% comisión': s.camioneros?.comerciales?.porcentaje_comision ?? '',
+    '% comisión': s.liq_comision_pct ?? s.camioneros?.comision_pct ?? s.camioneros?.comerciales?.porcentaje_comision ?? '',
     'CBU/CVU solicitud': s.cbu_cvu,
     'Domicilio declarado': s.domicilio_declarado || s.camioneros?.domicilio || '',
     'CUIT de Librador (echeq)': s.librador || '',
@@ -61,7 +61,12 @@ export function exportarCamioneros(camioneros) {
       if (co?.nombre != null) return `${co.nombre || ''} ${co.apellido || ''}`.trim()
       return 'Pago Nacional (por defecto)'
     })(),
-    '% comisión comercial': c.comerciales?.porcentaje_comision ?? '',
+    '% comisión': (() => {
+      const ov = c.comision_pct
+      if (ov != null && ov !== '') return Number(ov)
+      return c.comerciales?.porcentaje_comision ?? ''
+    })(),
+    '% personalizado': c.comision_pct != null && c.comision_pct !== '' ? 'Sí' : 'No',
   }))
 
   const ws = XLSX.utils.json_to_sheet(filas)

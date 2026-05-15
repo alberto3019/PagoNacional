@@ -462,7 +462,7 @@
       <div class="table-wrap" style="padding:22px 26px;">
         <div class="modal-section" style="margin-top:0;">Personas comerciales</div>
         <p style="font-size:13px;color:var(--text-muted);margin:0 0 14px;line-height:1.55;max-width:640px;">
-          Cada comercial tiene un porcentaje de comisión (referencia anual) que se aplica sobre el monto de cada gestión. En <strong>Camioneros</strong> podés asignar un comercial a cada uno.
+          Cada comercial tiene un porcentaje de comisión (referencia anual) que se aplica sobre el monto de cada gestión. En <strong>Camioneros → Ver</strong> podés asignar comercial y, si hace falta, un % personalizado por camionero.
         </p>
         <div class="modal-form" style="max-width:520px; margin-bottom:20px;">
           <div class="field-row" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
@@ -630,16 +630,22 @@
       <div class="detail-row"><span class="detail-label">Celular</span><span class="detail-val" id="m-celular"></span></div>
 
       <div id="cam-comercial-wrap" style="display:none;">
-        <div class="modal-section">Comercial asignado</div>
+        <div class="modal-section">Comercial y comisión</div>
         <p style="font-size:12px;color:var(--text-muted);margin:-4px 0 10px;line-height:1.45;">
-          Aplica a todas las gestiones de este camionero. Si no elegís uno, se usa <strong>Pago Nacional</strong> con la comisión por defecto (pestaña Comercial).
+          Aplica a las <strong>nuevas</strong> gestiones de este camionero (las ya creadas conservan el desglose congelado). Podés asignar un comercial y, si hace falta, un porcentaje distinto al del comercial (tratos preferenciales).
         </p>
-        <select id="cam-comercial-select" style="width:100%; padding:9px 12px; border:1px solid var(--border); border-radius:8px; font-size:13px; font-family:'DM Sans',sans-serif; margin-bottom:10px;">
+        <label for="cam-comercial-select" style="display:block;font-size:12px;font-weight:600;margin-bottom:6px;color:var(--text-muted);">Comercial / referido</label>
+        <select id="cam-comercial-select" onchange="actualizarHintComisionCamionero()"
+          style="width:100%; padding:9px 12px; border:1px solid var(--border); border-radius:8px; font-size:13px; font-family:'DM Sans',sans-serif; margin-bottom:12px;">
           <option value="">Pago Nacional (por defecto)</option>
         </select>
+        <label for="cam-comision-pct" style="display:block;font-size:12px;font-weight:600;margin-bottom:6px;color:var(--text-muted);">% de comisión para este camionero</label>
+        <input id="cam-comision-pct" type="number" min="0" max="100" step="0.01" placeholder="Usar % del comercial o Pago Nacional"
+          style="width:100%; padding:9px 12px; border:1px solid var(--border); border-radius:8px; font-size:13px; font-family:'DM Sans',sans-serif; margin-bottom:6px; box-sizing:border-box;" />
+        <p id="cam-comision-hint" style="font-size:12px;color:var(--text-muted);margin:0 0 12px;line-height:1.45;"></p>
         <button type="button" class="btn-export" onclick="guardarComercialCamionero()"
           style="background:var(--navy);color:#fff;border-color:var(--navy);font-weight:500;">
-          Guardar comercial
+          Guardar comercial y comisión
         </button>
       </div>
 
@@ -755,7 +761,7 @@
     listarComerciales, crearComercial, eliminarComercial, obtenerFinanzasConfig, guardarFinanzasConfig,
     actualizarComercialCamionero,
   } from '../lib/supabase.js'
-  import { armarLiquidacionParaEmail, liquidacionDesdeSolicitudOSistema } from '../lib/liquidacion.js'
+  import { armarLiquidacionParaEmail, liquidacionDesdeSolicitudOSistema, resolverComisionYEtiqueta } from '../lib/liquidacion.js'
   import { exportarSolicitudes, exportarCamioneros } from '../lib/exportExcel.js'
   import { enviarAprobacionConCuenta } from '../lib/emails.js'
   import {
@@ -878,6 +884,7 @@
     document.getElementById('fin-msg').style.display = 'none'
     try {
       const f = await obtenerFinanzasConfig()
+      finanzasCache = f
       document.getElementById('fin-pn-pct').value = f.comision_pagonacional_pct ?? 10
       document.getElementById('fin-gasto').value = f.gasto_administrativo ?? 0
     } catch (e) {
@@ -921,7 +928,7 @@
   window.guardarFinanzasAdmin = async function() {
     document.getElementById('fin-msg').style.display = 'none'
     try {
-      await guardarFinanzasConfig({
+      finanzasCache = await guardarFinanzasConfig({
         comision_pagonacional_pct: document.getElementById('fin-pn-pct').value,
         gasto_administrativo: document.getElementById('fin-gasto').value,
       })
@@ -970,13 +977,45 @@
     selectEl.value = comercialIdActual || ''
   }
 
+  function camioneroParaHintComision(c) {
+    const sel = document.getElementById('cam-comercial-select')
+    const comercialId = sel?.value || null
+    const co = comercialId ? (comercialesCache || []).find(x => x.id === comercialId) : null
+    return { ...(c || {}), comercial_id: comercialId, comerciales: co || null, comision_pct: null }
+  }
+
+  window.actualizarHintComisionCamionero = function() {
+    const hint = document.getElementById('cam-comision-hint')
+    if (!hint || !modalCamioneroId) return
+    const c = camioneroCache.find(x => x.id === modalCamioneroId)
+    if (!c) return
+    const { porcentajeBase, esPagoNacional } = resolverComisionYEtiqueta(
+      camioneroParaHintComision(c),
+      finanzasCache
+    )
+    const origen = esPagoNacional ? 'Pago Nacional' : 'comercial seleccionado'
+    const tienePersonal = c.comision_pct != null && c.comision_pct !== ''
+    hint.textContent = tienePersonal
+      ? `Personalizado activo: ${Number(c.comision_pct)}%. Si dejás el campo vacío y guardás, vuelve al ${origen} (${porcentajeBase}%).`
+      : `Si dejás el campo vacío se usa el % del ${origen}: ${porcentajeBase}%.`
+  }
+
   window.guardarComercialCamionero = async function() {
     if (!modalCamioneroId) return
     const sel = document.getElementById('cam-comercial-select')
     const val = sel.value || null
+    const pctRaw = String(document.getElementById('cam-comision-pct')?.value ?? '').trim()
+    const comisionPct = pctRaw === '' ? null : pctRaw
+    if (comisionPct != null) {
+      const n = Number(comisionPct)
+      if (!Number.isFinite(n) || n < 0 || n > 100) {
+        alert('El porcentaje debe estar entre 0 y 100.')
+        return
+      }
+    }
     try {
-      await actualizarComercialCamionero(modalCamioneroId, val)
-      alert('Comercial guardado.')
+      await actualizarComercialCamionero(modalCamioneroId, val, comisionPct)
+      alert('Comercial y comisión guardados.')
       await cargarCamioneros()
       closeModal()
     } catch (e) {
@@ -1400,9 +1439,11 @@
       }
       tb.innerHTML = filtered.map(c => {
         const co = c.comerciales
+        const { etiqueta, porcentaje, tieneOverridePersonalizado } = resolverComisionYEtiqueta(c, finanzasCache)
+        const pctNote = tieneOverridePersonalizado ? ' (personalizado)' : ''
         const comercialLbl = co?.nombre != null
-          ? `${co.nombre} ${co.apellido || ''} (${co.porcentaje_comision}%)`.trim()
-          : 'Pago Nacional'
+          ? `${co.nombre} ${co.apellido || ''} — ${porcentaje}%${pctNote}`.trim()
+          : `${etiqueta} — ${porcentaje}%${pctNote}`
         return `
         <tr>
           <td>${c.nombre}</td>
@@ -1443,6 +1484,14 @@
       if (!comercialesCache.length) await cargarComercialesLista()
     } catch (e) { /* noop */ }
     rellenarSelectComerciales(document.getElementById('cam-comercial-select'), c.comercial_id)
+    try {
+      if (!finanzasCache) finanzasCache = await obtenerFinanzasConfig()
+    } catch (e) { /* noop */ }
+    const pctInput = document.getElementById('cam-comision-pct')
+    if (pctInput) {
+      pctInput.value = c.comision_pct != null && c.comision_pct !== '' ? String(c.comision_pct) : ''
+    }
+    actualizarHintComisionCamionero()
 
     document.getElementById('m-nombre').textContent  = `${c.nombre || ''} ${c.apellido || ''}`.trim()
     document.getElementById('m-dni').textContent     = c.dni || ''
